@@ -1,62 +1,118 @@
-// src/components/Layout.jsx
+// =============================================
+// ARQUIVO: src/components/Layout.jsx
+// FUNÇÃO: Menu lateral + área de conteúdo principal
+// Paleta v3 — fundo #111111 (void) em tudo
+// =============================================
+
 import { Outlet, NavLink } from "react-router-dom";
 import { LayoutDashboard, ShoppingCart } from "lucide-react";
 
 function Layout() {
   return (
-    <div className="flex min-h-screen bg-carbon">
+    <div className="flex min-h-screen bg-void">
 
       {/* ===== MENU LATERAL ===== */}
-      <aside className="w-64 bg-carbon border-r border-carbon-600 flex flex-col">
+      <aside
+        className="w-64 flex flex-col flex-shrink-0"
+        style={{
+          background: "#111111",
+          borderRight: "1px solid rgba(255, 255, 255, 0.06)",
+        }}
+      >
 
-        {/* Logo */}
-        <div className="p-6 border-b border-carbon-600">
-          <h1 className="text-xl font-bold text-white">💼 Cyber Finance</h1>
-          <p className="text-xs text-carbon-800 mt-1">Sistema Financeiro</p>
+        {/* ── Logo ── */}
+        <div
+          className="p-6"
+          style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.06)" }}
+        >
+          {/* Nome com destaque pink */}
+          <h1 className="text-lg font-bold tracking-wide">
+            <span style={{ color: "#ff0571" }}>Cyber</span>
+            <span className="text-white"> Finance</span>
+          </h1>
+          <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.3)" }}>
+            Sistema Financeiro
+          </p>
         </div>
 
-        {/* Navegação */}
+        {/* ── Navegação ── */}
         <nav className="flex-1 p-4 space-y-1">
 
+          {/* Dashboard */}
           <NavLink
             to="/dashboard"
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
-                isActive
-                  ? "bg-flame text-carbon font-semibold"
-                  : "text-carbon-800 hover:bg-carbon-600 hover:text-white"
-              }`
+            className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200"
+            style={({ isActive }) =>
+              isActive
+                ? {
+                    background: "rgba(255, 5, 113, 0.12)",
+                    color: "#ff0571",
+                    border: "1px solid rgba(255, 5, 113, 0.25)",
+                    // leve glow no item ativo
+                    boxShadow: "0 0 12px rgba(255, 5, 113, 0.10)",
+                  }
+                : {
+                    color: "rgba(255,255,255,0.45)",
+                    border: "1px solid transparent",
+                  }
             }
           >
-            <LayoutDashboard size={18} />
-            Dashboard
+            {({ isActive }) => (
+              <>
+                <LayoutDashboard
+                  size={18}
+                  style={{ color: isActive ? "#ff0571" : "rgba(255,255,255,0.35)" }}
+                />
+                Dashboard
+              </>
+            )}
           </NavLink>
 
+          {/* Ordens de Compra */}
           <NavLink
             to="/ordens"
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
-                isActive
-                  ? "bg-flame text-carbon font-semibold"
-                  : "text-carbon-800 hover:bg-carbon-600 hover:text-white"
-              }`
+            className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200"
+            style={({ isActive }) =>
+              isActive
+                ? {
+                    background: "rgba(255, 5, 113, 0.12)",
+                    color: "#ff0571",
+                    border: "1px solid rgba(255, 5, 113, 0.25)",
+                    boxShadow: "0 0 12px rgba(255, 5, 113, 0.10)",
+                  }
+                : {
+                    color: "rgba(255,255,255,0.45)",
+                    border: "1px solid transparent",
+                  }
             }
           >
-            <ShoppingCart size={18} />
-            Ordens de Compra
+            {({ isActive }) => (
+              <>
+                <ShoppingCart
+                  size={18}
+                  style={{ color: isActive ? "#ff0571" : "rgba(255,255,255,0.35)" }}
+                />
+                Ordens de Compra
+              </>
+            )}
           </NavLink>
 
         </nav>
 
-        {/* Rodapé */}
-        <div className="p-4 border-t border-carbon-600">
-          <p className="text-xs text-carbon-700 text-center">v1.0.0</p>
+        {/* ── Rodapé do menu ── */}
+        <div
+          className="p-4 text-center"
+          style={{ borderTop: "1px solid rgba(255, 255, 255, 0.06)" }}
+        >
+          <p className="text-xs" style={{ color: "rgba(255,255,255,0.2)" }}>
+            v1.0.0
+          </p>
         </div>
 
       </aside>
 
-      {/* ===== CONTEÚDO ===== */}
-      <main className="flex-1 overflow-auto bg-carbon">
+      {/* ===== ÁREA DE CONTEÚDO ===== */}
+      <main className="flex-1 overflow-auto bg-void">
         <Outlet />
       </main>
 

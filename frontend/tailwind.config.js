@@ -1,3 +1,13 @@
+// =============================================
+// tailwind.config.js
+// Paleta oficial Cyber Finance — v3
+//
+// #111111 — fundo de TUDO sem exceção
+// #ff0571 — rosa/pink — destaque principal (botões, bordas ativas)
+// #c2ff05 — verde limão — destaque secundário (confirmações, tags)
+// #ffa300 — âmbar — destaque terciário (alertas, avisos)
+// =============================================
+
 export default {
   content: [
     "./index.html",
@@ -6,36 +16,68 @@ export default {
   theme: {
     extend: {
       colors: {
-        // =============================================
-        // Paleta oficial do Cyber Finance
-        // #272727 — fundo de TUDO sem exceção
-        // =============================================
-        flame: {
-          DEFAULT: '#ff9c00',
-          100: '#331f00', 200: '#663e00', 300: '#995d00', 400: '#cc7c00',
-          500: '#ff9c00', 600: '#ffb033', 700: '#ffc366', 800: '#ffd799', 900: '#ffeacc'
+
+        // ─── FUNDO PRINCIPAL ──────────────────────────────
+        void: {
+          DEFAULT: '#111111',
+          50:  '#f5f5f5',
+          100: '#e0e0e0',
+          200: '#c2c2c2',
+          300: '#a3a3a3',
+          400: '#858585',
+          500: '#666666',
+          600: '#474747',
+          700: '#292929',
+          800: '#1a1a1a',
+          900: '#0a0a0a',
         },
-        lime: {
-          DEFAULT: '#b1ff00',
-          100: '#233300', 200: '#466600', 300: '#699900', 400: '#8ccc00',
-          500: '#b1ff00', 600: '#c1ff33', 700: '#d0ff66', 800: '#e0ff99', 900: '#effacc'
+
+        // ─── ROSA / PINK — destaque principal ────────────
+        neon_pink: {
+          DEFAULT: '#ff0571',
+          50:  '#fff0f5',
+          100: '#ffd6e7',
+          200: '#ffadcf',
+          300: '#ff85b7',
+          400: '#ff3c94',
+          500: '#ff0571',
+          600: '#cc0059',
+          700: '#990042',
+          800: '#66002c',
+          900: '#330016',
         },
-        neon_green: {
-          DEFAULT: '#4dff00',
-          100: '#0f3300', 200: '#1e6600', 300: '#2d9900', 400: '#3ccc00',
-          500: '#4dff00', 600: '#70ff33', 700: '#94ff66', 800: '#b8ff99', 900: '#dbffcc'
+
+        // ─── VERDE LIMÃO — destaque secundário ───────────
+        acid: {
+          DEFAULT: '#c2ff05',
+          50:  '#f7ffe0',
+          100: '#eaffb3',
+          200: '#d5ff66',
+          300: '#c2ff05',
+          400: '#a8df00',
+          500: '#8bbf00',
+          600: '#6e9900',
+          700: '#527300',
+          800: '#354d00',
+          900: '#192600',
         },
-        ocean: {
-          DEFAULT: '#192f43',
-          100: '#050a0d', 200: '#0a131a', 300: '#0f1d28', 400: '#142635',
-          500: '#192f43', 600: '#2d5478', 700: '#4279ad', 800: '#7ca4c8', 900: '#bed1e4'
+
+        // ─── ÂMBAR — destaque terciário ──────────────────
+        amber: {
+          DEFAULT: '#ffa300',
+          50:  '#fff8e6',
+          100: '#ffedb3',
+          200: '#ffd966',
+          300: '#ffc41a',
+          400: '#ffa300',
+          500: '#cc8200',
+          600: '#996200',
+          700: '#664100',
+          800: '#332100',
+          900: '#1a1000',
         },
-        carbon: {
-          DEFAULT: '#272727',
-          100: '#080808', 200: '#101010', 300: '#181818', 400: '#1f1f1f',
-          500: '#272727', 600: '#4e4e4e', 700: '#767676', 800: '#a3a3a3', 900: '#d1d1d1'
-        },
-      }
+
+      },
     },
   },
   plugins: [],

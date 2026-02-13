@@ -1,0 +1,5 @@
+/* src/index.css */
+/* Importa as três camadas do Tailwind CSS */
+@tailwind base;       /* Reset e estilos base */
+@tailwind components; /* Classes de componentes */
+@tailwind utilities;  /* Classes utilitárias (as que mais usamos) */

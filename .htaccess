@@ -1,0 +1,19 @@
+# =============================================================
+# ARQUIVO: /backend/.htaccess
+# FUNÇÃO: Configurações do servidor Apache para a API
+# =============================================================
+
+# Ativa o módulo de reescrita de URL
+RewriteEngine On
+
+# Permite requisições de qualquer origem (CORS no nível do servidor)
+Header always set Access-Control-Allow-Origin "*"
+Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+Header always set Access-Control-Allow-Headers "Content-Type, Authorization"
+
+# Bloqueia acesso direto aos arquivos de config e models
+# Ninguém pode acessar /config/database.php ou /models/OC.php pelo navegador
+<FilesMatch "^(database|OC)\.php$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>

@@ -1,0 +1,25 @@
+# =============================================
+# .gitignore — arquivos ignorados pelo Git
+# =============================================
+
+# Dependências do Node (muito pesado, baixado via npm install)
+frontend/node_modules/
+
+# Build de produção (gerado automaticamente)
+frontend/dist/
+
+# Variáveis de ambiente e senhas (NUNCA sobe isso pro GitHub)
+.env
+.env.local
+*.env
+
+# Arquivos do sistema operacional
+.DS_Store
+Thumbs.db
+
+# Cache do Vite
+frontend/.vite/
+
+# Logs
+*.log
+npm-debug.log*

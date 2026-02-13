@@ -1,41 +1,31 @@
-// =============================================
-// ARQUIVO: src/components/Layout.jsx
-// FUNÇÃO: Estrutura base de todas as páginas
-// Contém o menu lateral e a área de conteúdo
-// O <Outlet /> é onde cada página é renderizada
-// =============================================
-
+// src/components/Layout.jsx
 import { Outlet, NavLink } from "react-router-dom";
-import {
-  LayoutDashboard, // ícone do dashboard
-  ShoppingCart,    // ícone das ordens de compra
-  PlusCircle,      // ícone de nova OC
-} from "lucide-react";
+import { LayoutDashboard, ShoppingCart, PlusCircle } from "lucide-react";
 
 function Layout() {
   return (
-    <div className="flex min-h-screen bg-gray-950">
+    // bg-onyx = #0c090d em tudo
+    <div className="flex min-h-screen bg-onyx">
 
       {/* ===== MENU LATERAL ===== */}
-      <aside className="w-64 bg-gray-900 border-r border-gray-800 flex flex-col">
+      <aside className="w-64 bg-onyx border-r border-onyx-600 flex flex-col">
 
-        {/* Logo / Nome do sistema */}
-        <div className="p-6 border-b border-gray-800">
+        {/* Logo */}
+        <div className="p-6 border-b border-onyx-600">
           <h1 className="text-xl font-bold text-white">💼 Cyber Finance</h1>
-          <p className="text-xs text-gray-400 mt-1">Sistema Financeiro</p>
+          <p className="text-xs text-onyx-900 mt-1">Sistema Financeiro</p>
         </div>
 
-        {/* Links de navegação */}
+        {/* Navegação */}
         <nav className="flex-1 p-4 space-y-1">
 
-          {/* NavLink aplica classe ativa automaticamente quando a rota bate */}
           <NavLink
             to="/dashboard"
             className={({ isActive }) =>
               `flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
                 isActive
-                  ? "bg-blue-600 text-white"           // estilo quando ativo
-                  : "text-gray-400 hover:bg-gray-800 hover:text-white" // estilo normal
+                  ? "bg-amaranth text-white"
+                  : "text-onyx-900 hover:bg-onyx-600 hover:text-white"
               }`
             }
           >
@@ -48,8 +38,8 @@ function Layout() {
             className={({ isActive }) =>
               `flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
                 isActive
-                  ? "bg-blue-600 text-white"
-                  : "text-gray-400 hover:bg-gray-800 hover:text-white"
+                  ? "bg-amaranth text-white"
+                  : "text-onyx-900 hover:bg-onyx-600 hover:text-white"
               }`
             }
           >
@@ -62,8 +52,8 @@ function Layout() {
             className={({ isActive }) =>
               `flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
                 isActive
-                  ? "bg-blue-600 text-white"
-                  : "text-gray-400 hover:bg-gray-800 hover:text-white"
+                  ? "bg-amaranth text-white"
+                  : "text-onyx-900 hover:bg-onyx-600 hover:text-white"
               }`
             }
           >
@@ -73,16 +63,15 @@ function Layout() {
 
         </nav>
 
-        {/* Rodapé do menu */}
-        <div className="p-4 border-t border-gray-800">
-          <p className="text-xs text-gray-500 text-center">v1.0.0</p>
+        {/* Rodapé */}
+        <div className="p-4 border-t border-onyx-600">
+          <p className="text-xs text-onyx-900 text-center">v1.0.0</p>
         </div>
 
       </aside>
 
-      {/* ===== ÁREA DE CONTEÚDO ===== */}
-      {/* O Outlet renderiza a página correspondente à rota atual */}
-      <main className="flex-1 overflow-auto">
+      {/* ===== CONTEÚDO ===== */}
+      <main className="flex-1 overflow-auto bg-onyx">
         <Outlet />
       </main>
 

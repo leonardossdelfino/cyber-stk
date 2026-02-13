@@ -4,27 +4,22 @@
 // Separa lógica da interface — boa prática React
 // =============================================
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { criarOC, buscarOC, atualizarOC } from "../services/api";
 
 // -----------------------------------------------
 // Retorna a data de hoje no formato YYYY-MM-DD
-// que é o formato aceito pelo input type="date"
-// Usa toLocaleDateString com locale pt-BR invertido
-// para evitar problemas de fuso horário com toISOString()
+// Usa getFullYear/getMonth/getDate para evitar
+// problemas de fuso horário do toISOString()
 // -----------------------------------------------
 const dataDeHoje = () => {
   const hoje = new Date();
   const ano  = hoje.getFullYear();
   const mes  = String(hoje.getMonth() + 1).padStart(2, "0");
   const dia  = String(hoje.getDate()).padStart(2, "0");
-  return `${ano}-${mes}-${dia}`; // ex: "2026-02-13"
+  return `${ano}-${mes}-${dia}`;
 };
 
-// -----------------------------------------------
-// Valores iniciais do formulário
-// Espelha as colunas do banco de dados
-// -----------------------------------------------
 const FORM_INICIAL = {
   oc_numero:          "",
   oc_descricao:       "",
@@ -33,15 +28,11 @@ const FORM_INICIAL = {
   oc_status:          "OC Aberta",
   oc_forma_pagamento: "Boleto",
   oc_aprovacao:       "Aguardando aprovação",
-  oc_data_referencia: dataDeHoje(), // ← preenche com hoje automaticamente
+  oc_data_referencia: "", // preenchido dinamicamente no useEffect
   oc_centro_de_custo: "",
   oc_solicitante:     "",
 };
 
-// -----------------------------------------------
-// Opções dos campos ENUM
-// Espelham exatamente os valores do banco MySQL
-// -----------------------------------------------
 export const OPCOES_STATUS = [
   "OC Aberta",
   "Aguardando faturar",
@@ -79,19 +70,26 @@ export function useOC(id = null, onSalvo = null) {
   const [erro, setErro]       = useState(null);
   const [sucesso, setSucesso] = useState(null);
 
-  // Se recebeu um ID, carrega os dados da OC para edição
-  // Se não recebeu ID (nova OC), mantém o FORM_INICIAL com a data de hoje
+  // Ref para cancelar o setTimeout se o componente desmontar
+  const timerRef = useRef(null);
+
   useEffect(() => {
     if (id) {
       carregarOC(id);
     } else {
-      // Garante que ao reabrir o modal de nova OC a data seja sempre hoje
+      // Calcula a data no momento em que o hook é montado (não no módulo)
       setForm({ ...FORM_INICIAL, oc_data_referencia: dataDeHoje() });
     }
-  }, [id]);
+
+    // Limpa o timer pendente ao desmontar
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
+  // carregarOC é estável (definida fora do fluxo de estado) — safe ignorar
 
   // -----------------------------------------------
-  // Carrega uma OC existente pelo ID (modo edição)
+  // Carrega OC existente para edição
   // -----------------------------------------------
   const carregarOC = async (ocId) => {
     setLoading(true);
@@ -111,20 +109,18 @@ export function useOC(id = null, onSalvo = null) {
   };
 
   // -----------------------------------------------
-  // Atualiza um campo específico do formulário
+  // Atualiza campo no estado
   // -----------------------------------------------
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
-    // Limpa mensagens de erro/sucesso ao digitar
     setErro(null);
     setSucesso(null);
   };
 
   // -----------------------------------------------
-  // Valida apenas os campos obrigatórios antes de salvar
-  // Obrigatórios: número, descrição, fornecedor, valor,
-  //               forma de pagamento, data de abertura
+  // Validação — apenas campos obrigatórios
+  // Obrigatórios: número, descrição, fornecedor, valor, pagamento, data
   // Opcionais:    solicitante, centro de custo, status, aprovação
   // -----------------------------------------------
   const validar = () => {
@@ -132,14 +128,16 @@ export function useOC(id = null, onSalvo = null) {
     if (!form.oc_descricao.trim())       return "Descrição é obrigatória.";
     if (!form.oc_nome_fornecedor.trim()) return "Nome do fornecedor é obrigatório.";
     if (!form.oc_valor)                  return "Valor é obrigatório.";
-    if (isNaN(form.oc_valor))            return "Valor deve ser um número.";
+    // Number() converte string vazia para 0, isNaN("") seria false sem isso
+    if (isNaN(Number(form.oc_valor)))    return "Valor deve ser um número válido.";
+    if (Number(form.oc_valor) < 0)       return "Valor não pode ser negativo.";
     if (!form.oc_forma_pagamento)        return "Forma de pagamento é obrigatória.";
     if (!form.oc_data_referencia)        return "Data de abertura é obrigatória.";
-    return null; // null = sem erros
+    return null;
   };
 
   // -----------------------------------------------
-  // Submete o formulário — cria ou atualiza a OC
+  // Submete o formulário — cria ou atualiza
   // -----------------------------------------------
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -161,28 +159,20 @@ export function useOC(id = null, onSalvo = null) {
 
       if (resultado.success) {
         setSucesso(id ? "OC atualizada com sucesso!" : "OC criada com sucesso!");
-        setTimeout(() => {
+        // Timer com ref para poder cancelar se o componente desmontar
+        timerRef.current = setTimeout(() => {
           if (onSalvo) onSalvo();
         }, 800);
       } else {
         setErro(resultado.message || "Erro ao salvar OC.");
       }
     } catch (err) {
-      // Mostra o erro real no console para facilitar o debug
       console.error("Erro ao salvar OC:", err);
-      setErro("Erro de conexão com a API. Verifique o backend.");
+      setErro(err.message || "Erro de conexão com a API. Verifique o backend.");
     } finally {
       setSaving(false);
     }
   };
 
-  return {
-    form,
-    loading,
-    saving,
-    erro,
-    sucesso,
-    handleChange,
-    handleSubmit,
-  };
+  return { form, loading, saving, erro, sucesso, handleChange, handleSubmit };
 }

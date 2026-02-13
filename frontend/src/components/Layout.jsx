@@ -105,7 +105,7 @@ function Layout() {
           style={{ borderTop: "1px solid rgba(255, 255, 255, 0.06)" }}
         >
           <p className="text-xs" style={{ color: "rgba(255,255,255,0.2)" }}>
-            v1.0.0
+            v0.1.0
           </p>
         </div>
 

@@ -5,41 +5,31 @@
 // Métodos suportados:
 //   GET    → Lista todas as OCs ou busca uma por ID
 //   POST   → Cria uma nova OC
-//   PUT    → Atualiza uma OC existente
+//   PUT    → Atualiza uma OC (completa ou só o status)
 //   DELETE → Remove uma OC
 // =============================================================
 
-// --- Headers obrigatórios para API REST ---
-// Permite que o React (rodando em outro domínio/porta) acesse essa API
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Content-Type: application/json; charset=UTF-8");
 
-// Responde imediatamente requisições OPTIONS (preflight do navegador)
+// Responde requisições OPTIONS (preflight do navegador)
 if ($_SERVER["REQUEST_METHOD"] === "OPTIONS") {
     http_response_code(200);
     exit();
 }
 
-// Importa a conexão e o model
 require_once "../config/database.php";
 require_once "../models/OC.php";
 
-// Inicializa a conexão e o model
 $database = new Database();
 $db       = $database->getConnection();
 $oc       = new OC($db);
 
-// Identifica o método HTTP da requisição
 $method = $_SERVER["REQUEST_METHOD"];
+$id     = isset($_GET["id"]) ? intval($_GET["id"]) : null;
 
-// Captura o ID da URL caso seja passado (ex: /api/oc.php?id=5)
-$id = isset($_GET["id"]) ? intval($_GET["id"]) : null;
-
-// =============================================================
-// ROTEAMENTO: direciona para o método correto
-// =============================================================
 switch ($method) {
 
     // ---------------------------------------------------------
@@ -47,10 +37,9 @@ switch ($method) {
     // ---------------------------------------------------------
     case "GET":
         if ($id) {
-            // Busca uma OC específica pelo ID
-            $oc->id   = $id;
-            $stmt     = $oc->buscarPorId();
-            $row      = $stmt->fetch(PDO::FETCH_ASSOC);
+            $oc->id = $id;
+            $stmt   = $oc->buscarPorId();
+            $row    = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if ($row) {
                 echo json_encode(["success" => true, "data" => $row]);
@@ -59,7 +48,6 @@ switch ($method) {
                 echo json_encode(["success" => false, "message" => "OC não encontrada."]);
             }
         } else {
-            // Lista todas as OCs
             $stmt = $oc->listarTodas();
             $ocs  = $stmt->fetchAll(PDO::FETCH_ASSOC);
             echo json_encode(["success" => true, "data" => $ocs, "total" => count($ocs)]);
@@ -70,10 +58,8 @@ switch ($method) {
     // POST → Cria uma nova OC
     // ---------------------------------------------------------
     case "POST":
-        // Lê o JSON enviado pelo React no corpo da requisição
         $data = json_decode(file_get_contents("php://input"), true);
 
-        // Valida se os campos obrigatórios foram enviados
         if (
             empty($data["oc_numero"])          ||
             empty($data["oc_descricao"])        ||
@@ -88,7 +74,6 @@ switch ($method) {
             break;
         }
 
-        // Preenche o model com os dados recebidos
         $oc->oc_numero          = $data["oc_numero"];
         $oc->oc_descricao       = $data["oc_descricao"];
         $oc->oc_nome_fornecedor = $data["oc_nome_fornecedor"];
@@ -101,7 +86,7 @@ switch ($method) {
         $oc->oc_solicitante     = $data["oc_solicitante"];
 
         if ($oc->criar()) {
-            http_response_code(201); // 201 = Created
+            http_response_code(201);
             echo json_encode(["success" => true, "message" => "OC criada com sucesso."]);
         } else {
             http_response_code(500);
@@ -111,6 +96,7 @@ switch ($method) {
 
     // ---------------------------------------------------------
     // PUT → Atualiza uma OC existente
+    // Suporta atualização completa ou parcial (_patch: true)
     // ---------------------------------------------------------
     case "PUT":
         $data = json_decode(file_get_contents("php://input"), true);
@@ -121,7 +107,24 @@ switch ($method) {
             break;
         }
 
-        // Preenche o model com os dados para atualização
+        // Atualização parcial — só o status (seletor inline da listagem)
+        if (!empty($data["_patch"]) && $data["_patch"] === true) {
+            $valor = htmlspecialchars(strip_tags($data["oc_status"]));
+            $query = "UPDATE ordens_de_compra SET oc_status = :oc_status WHERE id = :id";
+            $stmt  = $db->prepare($query);
+            $stmt->bindParam(":oc_status", $valor);
+            $stmt->bindParam(":id", $id);
+
+            if ($stmt->execute()) {
+                echo json_encode(["success" => true, "message" => "Status atualizado."]);
+            } else {
+                http_response_code(500);
+                echo json_encode(["success" => false, "message" => "Erro ao atualizar status."]);
+            }
+            break;
+        }
+
+        // Atualização completa
         $oc->id                 = $id;
         $oc->oc_numero          = $data["oc_numero"];
         $oc->oc_descricao       = $data["oc_descricao"];

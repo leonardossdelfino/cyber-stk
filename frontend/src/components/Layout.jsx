@@ -1,19 +1,18 @@
 // src/components/Layout.jsx
 import { Outlet, NavLink } from "react-router-dom";
-import { LayoutDashboard, ShoppingCart, PlusCircle } from "lucide-react";
+import { LayoutDashboard, ShoppingCart } from "lucide-react";
 
 function Layout() {
   return (
-    // bg-onyx = #0c090d em tudo
-    <div className="flex min-h-screen bg-onyx">
+    <div className="flex min-h-screen bg-carbon">
 
       {/* ===== MENU LATERAL ===== */}
-      <aside className="w-64 bg-onyx border-r border-onyx-600 flex flex-col">
+      <aside className="w-64 bg-carbon border-r border-carbon-600 flex flex-col">
 
         {/* Logo */}
-        <div className="p-6 border-b border-onyx-600">
+        <div className="p-6 border-b border-carbon-600">
           <h1 className="text-xl font-bold text-white">💼 Cyber Finance</h1>
-          <p className="text-xs text-onyx-900 mt-1">Sistema Financeiro</p>
+          <p className="text-xs text-carbon-800 mt-1">Sistema Financeiro</p>
         </div>
 
         {/* Navegação */}
@@ -22,10 +21,10 @@ function Layout() {
           <NavLink
             to="/dashboard"
             className={({ isActive }) =>
-              `flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+              `flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
                 isActive
-                  ? "bg-amaranth text-white"
-                  : "text-onyx-900 hover:bg-onyx-600 hover:text-white"
+                  ? "bg-flame text-carbon font-semibold"
+                  : "text-carbon-800 hover:bg-carbon-600 hover:text-white"
               }`
             }
           >
@@ -36,10 +35,10 @@ function Layout() {
           <NavLink
             to="/ordens"
             className={({ isActive }) =>
-              `flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+              `flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
                 isActive
-                  ? "bg-amaranth text-white"
-                  : "text-onyx-900 hover:bg-onyx-600 hover:text-white"
+                  ? "bg-flame text-carbon font-semibold"
+                  : "text-carbon-800 hover:bg-carbon-600 hover:text-white"
               }`
             }
           >
@@ -47,31 +46,17 @@ function Layout() {
             Ordens de Compra
           </NavLink>
 
-          <NavLink
-            to="/ordens/nova"
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                isActive
-                  ? "bg-amaranth text-white"
-                  : "text-onyx-900 hover:bg-onyx-600 hover:text-white"
-              }`
-            }
-          >
-            <PlusCircle size={18} />
-            Nova OC
-          </NavLink>
-
         </nav>
 
         {/* Rodapé */}
-        <div className="p-4 border-t border-onyx-600">
-          <p className="text-xs text-onyx-900 text-center">v1.0.0</p>
+        <div className="p-4 border-t border-carbon-600">
+          <p className="text-xs text-carbon-700 text-center">v1.0.0</p>
         </div>
 
       </aside>
 
       {/* ===== CONTEÚDO ===== */}
-      <main className="flex-1 overflow-auto bg-onyx">
+      <main className="flex-1 overflow-auto bg-carbon">
         <Outlet />
       </main>
 

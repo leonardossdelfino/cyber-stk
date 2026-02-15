@@ -1,8 +1,13 @@
-// src/App.jsx
+// =============================================
+// ARQUIVO: src/App.jsx
+// FUNÇÃO: Roteamento principal da aplicação
+// =============================================
+
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import Dashboard    from "./pages/Dashboard";
-import ListagemOCs  from "./pages/ListagemOCs";
-import Layout       from "./components/Layout";
+import Layout        from "./components/Layout";
+import Dashboard     from "./pages/Dashboard";
+import ListagemOCs   from "./pages/ListagemOCs";
+import Configuracoes from "./pages/Configuracoes";
 
 function App() {
   return (
@@ -10,9 +15,9 @@ function App() {
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="dashboard" element={<Dashboard />} />
-          {/* Listagem gerencia o modal internamente */}
-          <Route path="ordens"    element={<ListagemOCs />} />
+          <Route path="dashboard"     element={<Dashboard />} />
+          <Route path="ordens"        element={<ListagemOCs />} />
+          <Route path="configuracoes" element={<Configuracoes />} />
         </Route>
       </Routes>
     </BrowserRouter>

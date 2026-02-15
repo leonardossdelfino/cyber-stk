@@ -23,9 +23,9 @@ class Database {
         // ?: "fallback" é usado quando a variável não está definida (XAMPP local)
         // Em produção: configure as variáveis no painel da Hostinger
         $this->host     = getenv("DB_HOST")     ?: "localhost";
-        $this->db_name  = getenv("DB_NAME")     ?: "u239500132_cyber_stk";
-        $this->username = getenv("DB_USER")     ?: "u239500132_cyber_stk";
-        $this->password = getenv("DB_PASSWORD") ?: "3nPEpf>F";
+        $this->db_name  = getenv("DB_NAME")     ?: "cyber-stk";
+        $this->username = getenv("DB_USER")     ?: "root";
+        $this->password = getenv("DB_PASSWORD") ?: "";
     }
 
     // ---------------------------------------------------------

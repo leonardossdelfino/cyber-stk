@@ -43,17 +43,49 @@ function Layout() {
       >
 
         {/* ── Logo ── */}
+        {/* ── Logo ── */}
         <div
           className="p-6"
           style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.06)" }}
         >
-          <h1 className="text-lg font-bold tracking-wide">
-            <span style={{ color: "#ff0571" }}>Cyber</span>
-            <span className="text-white"> Finance</span>
-          </h1>
-          <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.3)" }}>
-            Sistema Financeiro
-          </p>
+          <div className="flex items-center gap-2">
+            {/* Estrela da Morte SVG */}
+            <svg
+              width="28"
+              height="28"
+              viewBox="0 0 100 100"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              style={{ flexShrink: 0 }}
+            >
+              {/* Círculo externo */}
+              <circle cx="50" cy="50" r="46" stroke="#ff0571" strokeWidth="4" fill="none" />
+
+              {/* Linha divisória horizontal */}
+              <line x1="4" y1="50" x2="96" y2="50" stroke="#ff0571" strokeWidth="4" />
+
+              {/* Superlaser (círculo menor — lado esquerdo superior) */}
+              <circle cx="35" cy="35" r="10" stroke="#ff0571" strokeWidth="3.5" fill="none" />
+              <circle cx="35" cy="35" r="4"  fill="#ff0571" />
+
+              {/* Linhas decorativas — hemisfério superior */}
+              <line x1="52" y1="28" x2="76" y2="28" stroke="#ff0571" strokeWidth="3" strokeLinecap="round" />
+              <line x1="58" y1="20" x2="78" y2="20" stroke="#ff0571" strokeWidth="3" strokeLinecap="round" />
+              <line x1="55" y1="36" x2="72" y2="36" stroke="#ff0571" strokeWidth="3" strokeLinecap="round" />
+              <line x1="62" y1="44" x2="76" y2="44" stroke="#ff0571" strokeWidth="2.5" strokeLinecap="round" />
+
+              {/* Linhas decorativas — hemisfério inferior */}
+              <line x1="20" y1="62" x2="50" y2="62" stroke="#ff0571" strokeWidth="3" strokeLinecap="round" />
+              <line x1="26" y1="70" x2="58" y2="70" stroke="#ff0571" strokeWidth="3" strokeLinecap="round" />
+              <line x1="20" y1="78" x2="52" y2="78" stroke="#ff0571" strokeWidth="3" strokeLinecap="round" />
+              <line x1="30" y1="86" x2="60" y2="86" stroke="#ff0571" strokeWidth="2.5" strokeLinecap="round" />
+            </svg>
+
+            <h1 className="text-lg font-bold tracking-wide">
+              <span style={{ color: "#ff0571" }}>Cyber</span>
+              <span className="text-white"> Finance</span>
+            </h1>
+          </div>
         </div>
 
         {/* ── Navegação ── */}

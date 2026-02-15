@@ -3,17 +3,16 @@
 // FUNÇÃO: Lista OCs em dois grupos:
 //   1. Em Andamento — status ativo (não Finalizado, não Cancelado)
 //   2. Histórico     — todas as OCs ordenadas por data
-// Paleta v3 — fundo #111111
-// Cores de status conforme definição do projeto
 // =============================================
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Plus, Search, Pencil, Trash2,
-  Loader2, RefreshCw, ChevronDown,
+  Loader2, RefreshCw, ChevronDown, Paperclip,
 } from "lucide-react";
 import { listarOCs, deletarOC, atualizarOC } from "../services/api";
 import ModalOC from "../components/ModalOC";
+import ModalDocumentos from "../components/ModalDocumentos";
 
 // ─────────────────────────────────────────────
 // CONSTANTES — status e cores
@@ -34,8 +33,6 @@ const TODOS_STATUS = [
   "Cancelado",
 ];
 
-// Cores dos badges e seletores inline por status
-// Conforme especificação do projeto
 const COR_STATUS = {
   "OC Aberta":             { bg: "rgba(30, 255, 5, 0.12)",   color: "#1eff05",  dot: "#1eff05"  },
   "Aguardando faturar":    { bg: "rgba(1, 196, 231, 0.12)",  color: "#01c4e7",  dot: "#01c4e7"  },
@@ -48,10 +45,10 @@ const COR_STATUS = {
 };
 
 const COR_APROVACAO = {
-  "Sim":                  { bg: "rgba(194, 255, 5, 0.10)",  color: "#c2ff05" },
-  "Não":                  { bg: "rgba(255, 5, 113, 0.10)",  color: "#ff0571" },
-  "Aguardando CEO":       { bg: "rgba(255, 163, 0, 0.10)",  color: "#ffa300" },
-  "Aguardando Head":      { bg: "rgba(255, 163, 0, 0.10)",  color: "#ffa300" },
+  "Sim":                  { bg: "rgba(194, 255, 5, 0.10)",   color: "#c2ff05" },
+  "Não":                  { bg: "rgba(255, 5, 113, 0.10)",   color: "#ff0571" },
+  "Aguardando CEO":       { bg: "rgba(255, 163, 0, 0.10)",   color: "#ffa300" },
+  "Aguardando Head":      { bg: "rgba(255, 163, 0, 0.10)",   color: "#ffa300" },
   "Aguardando aprovação": { bg: "rgba(255, 255, 255, 0.06)", color: "rgba(255,255,255,0.45)" },
 };
 
@@ -64,8 +61,6 @@ const formatarValor = (valor) =>
 
 const formatarData = (data) => {
   if (!data) return "—";
-  // Aceita "YYYY-MM-DD" (MySQL) — exibe dd/mm/yyyy
-  // Usa split direto para evitar problemas de timezone do new Date()
   const partes = data.split("-");
   const ano = partes[0];
   const mes = partes[1];
@@ -75,7 +70,7 @@ const formatarData = (data) => {
 };
 
 // ─────────────────────────────────────────────
-// BADGE DE STATUS — com bolinha colorida
+// BADGE DE STATUS
 // ─────────────────────────────────────────────
 function BadgeStatus({ status }) {
   const cor = COR_STATUS[status] ?? { bg: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.45)", dot: "#666" };
@@ -93,10 +88,8 @@ function BadgeStatus({ status }) {
   );
 }
 
-// Badge de aprovação
 // ─────────────────────────────────────────────
-// SELETOR INLINE DE APROVAÇÃO — mesmo padrão do SeletorStatus
-// Dropdown fixo via getBoundingClientRect para não ser cortado
+// SELETOR INLINE DE APROVAÇÃO
 // ─────────────────────────────────────────────
 const TODAS_APROVACOES = [
   "Sim",
@@ -167,18 +160,18 @@ function SeletorAprovacao({ oc, onAtualizado }) {
           />
           <div
             style={{
-              position:   "fixed",
-              top:        posicao.top,
-              left:       posicao.left,
-              zIndex:     50,
-              minWidth:   "210px",
-              padding:    "4px 0",
-              borderRadius: "10px",
-              background: "rgba(14, 14, 14, 0.98)",
-              backdropFilter: "blur(24px)",
+              position:        "fixed",
+              top:             posicao.top,
+              left:            posicao.left,
+              zIndex:          50,
+              minWidth:        "210px",
+              padding:         "4px 0",
+              borderRadius:    "10px",
+              background:      "rgba(14, 14, 14, 0.98)",
+              backdropFilter:  "blur(24px)",
               WebkitBackdropFilter: "blur(24px)",
-              border:     "1px solid rgba(194, 255, 5, 0.20)",
-              boxShadow:  "0 8px 32px rgba(0,0,0,0.70), 0 0 20px rgba(194,255,5,0.06)",
+              border:          "1px solid rgba(194, 255, 5, 0.20)",
+              boxShadow:       "0 8px 32px rgba(0,0,0,0.70), 0 0 20px rgba(194,255,5,0.06)",
             }}
           >
             {TODAS_APROVACOES.map((ap) => {
@@ -217,25 +210,21 @@ function SeletorAprovacao({ oc, onAtualizado }) {
 }
 
 // ─────────────────────────────────────────────
-// SELETOR INLINE DE STATUS (dropdown na linha)
-// Usa position: fixed com coordenadas via getBoundingClientRect
-// para escapar do overflow da tabela sem ser cortado
+// SELETOR INLINE DE STATUS
 // ─────────────────────────────────────────────
 function SeletorStatus({ oc, onAtualizado }) {
   const [aberto, setAberto]     = useState(false);
   const [salvando, setSalvando] = useState(false);
-  // Posição calculada do dropdown no viewport
   const [posicao, setPosicao]   = useState({ top: 0, left: 0 });
   const btnRef = useRef(null);
 
   const cor = COR_STATUS[oc.oc_status] ?? { bg: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.45)" };
 
-  // Calcula a posição exata do botão no viewport ao abrir
   const abrirDropdown = () => {
     if (btnRef.current) {
       const rect = btnRef.current.getBoundingClientRect();
       setPosicao({
-        top:  rect.bottom + window.scrollY + 4,  // 4px abaixo do botão
+        top:  rect.bottom + window.scrollY + 4,
         left: rect.left   + window.scrollX,
       });
     }
@@ -256,7 +245,6 @@ function SeletorStatus({ oc, onAtualizado }) {
 
   return (
     <>
-      {/* Botão de trigger */}
       <button
         ref={btnRef}
         onClick={abrirDropdown}
@@ -282,30 +270,26 @@ function SeletorStatus({ oc, onAtualizado }) {
         <ChevronDown size={10} style={{ opacity: 0.6 }} />
       </button>
 
-      {/* Dropdown — renderizado via portal em position: fixed
-          Fica fora da tabela, nunca é cortado pelo overflow */}
       {aberto && (
         <>
-          {/* Overlay para fechar ao clicar fora */}
           <div
             style={{ position: "fixed", inset: 0, zIndex: 40 }}
             onClick={() => setAberto(false)}
           />
-
           <div
             style={{
-              position:   "fixed",
-              top:        posicao.top,
-              left:       posicao.left,
-              zIndex:     50,
-              minWidth:   "210px",
-              padding:    "4px 0",
-              borderRadius: "10px",
-              background: "rgba(14, 14, 14, 0.98)",
-              backdropFilter: "blur(24px)",
+              position:        "fixed",
+              top:             posicao.top,
+              left:            posicao.left,
+              zIndex:          50,
+              minWidth:        "210px",
+              padding:         "4px 0",
+              borderRadius:    "10px",
+              background:      "rgba(14, 14, 14, 0.98)",
+              backdropFilter:  "blur(24px)",
               WebkitBackdropFilter: "blur(24px)",
-              border:     "1px solid rgba(255, 5, 113, 0.22)",
-              boxShadow:  "0 8px 32px rgba(0,0,0,0.70), 0 0 20px rgba(255,5,113,0.07)",
+              border:          "1px solid rgba(255, 5, 113, 0.22)",
+              boxShadow:       "0 8px 32px rgba(0,0,0,0.70), 0 0 20px rgba(255,5,113,0.07)",
             }}
           >
             {TODOS_STATUS.map((st) => {
@@ -364,9 +348,8 @@ function SecaoTitulo({ titulo, subtitulo, cor }) {
 // ─────────────────────────────────────────────
 // TABELA DE OCs
 // ─────────────────────────────────────────────
-function TabelaOCs({ ocs, loading, onEditar, onDeletar, onStatusAtualizado, deletando }) {
+function TabelaOCs({ ocs, loading, onEditar, onDeletar, onStatusAtualizado, onAbrirDocumentos, contadorDocs, deletando }) {
 
-  // Estilo base das células
   const tdBase = {
     padding: "12px 16px",
     borderBottom: "1px solid rgba(255,255,255,0.04)",
@@ -434,116 +417,160 @@ function TabelaOCs({ ocs, loading, onEditar, onDeletar, onStatusAtualizado, dele
 
         {/* Linhas */}
         <tbody>
-          {ocs.map((oc) => (
-            <tr
-              key={oc.id}
-              style={{ transition: "background 0.15s" }}
-              onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.025)"}
-              onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
-            >
-              {/* Número OC */}
-              <td style={{ ...tdBase, fontWeight: 600, color: "#ffffff", whiteSpace: "nowrap" }}>
-                {oc.oc_numero}
-              </td>
+          {ocs.map((oc) => {
+            const totalDocs = contadorDocs[oc.id] ?? 0;
+            const temDocs   = totalDocs > 0;
 
-              {/* Descrição */}
-              <td style={{ ...tdBase, maxWidth: "200px" }}>
-                <span
-                  className="block overflow-hidden"
-                  style={{ textOverflow: "ellipsis", whiteSpace: "nowrap" }}
-                  title={oc.oc_descricao}
-                >
-                  {oc.oc_descricao}
-                </span>
-              </td>
+            return (
+              <tr
+                key={oc.id}
+                style={{ transition: "background 0.15s" }}
+                onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.025)"}
+                onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+              >
+                {/* Número OC */}
+                <td style={{ ...tdBase, fontWeight: 600, color: "#ffffff", whiteSpace: "nowrap" }}>
+                  {oc.oc_numero}
+                </td>
 
-              {/* Fornecedor */}
-              <td style={{ ...tdBase, whiteSpace: "nowrap" }}>{oc.oc_nome_fornecedor}</td>
-
-              {/* Valor */}
-              <td style={{ ...tdBase, fontWeight: 600, color: "#c2ff05", whiteSpace: "nowrap" }}>
-                {formatarValor(oc.oc_valor)}
-              </td>
-
-              {/* Referência */}
-              <td style={{ ...tdBase, whiteSpace: "nowrap", color: "rgba(255,255,255,0.45)" }}>
-                {formatarData(oc.oc_data_referencia)}
-              </td>
-
-              {/* Status — seletor inline */}
-              <td style={{ ...tdBase }}>
-                <SeletorStatus oc={oc} onAtualizado={onStatusAtualizado} />
-              </td>
-
-              {/* Aprovação — seletor inline */}
-              <td style={{ ...tdBase }}>
-                <SeletorAprovacao oc={oc} onAtualizado={onStatusAtualizado} />
-              </td>
-
-              {/* Ações */}
-              <td style={{ ...tdBase, whiteSpace: "nowrap" }}>
-                <div className="flex items-center gap-2">
-
-                  {/* Editar */}
-                  <button
-                    onClick={() => onEditar(oc.id)}
-                    className="flex items-center justify-center w-7 h-7 rounded-md transition-all duration-150"
-                    title="Editar OC"
-                    style={{
-                      background: "rgba(255,255,255,0.04)",
-                      border: "1px solid rgba(255,255,255,0.08)",
-                      color: "rgba(255,255,255,0.45)",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "rgba(255, 163, 0, 0.12)";
-                      e.currentTarget.style.borderColor = "rgba(255, 163, 0, 0.30)";
-                      e.currentTarget.style.color = "#ffa300";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "rgba(255,255,255,0.04)";
-                      e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)";
-                      e.currentTarget.style.color = "rgba(255,255,255,0.45)";
-                    }}
+                {/* Descrição */}
+                <td style={{ ...tdBase, maxWidth: "200px" }}>
+                  <span
+                    className="block overflow-hidden"
+                    style={{ textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                    title={oc.oc_descricao}
                   >
-                    <Pencil size={13} />
-                  </button>
+                    {oc.oc_descricao}
+                  </span>
+                </td>
 
-                  {/* Deletar */}
-                  <button
-                    onClick={() => onDeletar(oc.id)}
-                    disabled={deletando === oc.id}
-                    className="flex items-center justify-center w-7 h-7 rounded-md transition-all duration-150"
-                    title="Deletar OC"
-                    style={{
-                      background: "rgba(255,255,255,0.04)",
-                      border: "1px solid rgba(255,255,255,0.08)",
-                      color: "rgba(255,255,255,0.45)",
-                      cursor: deletando === oc.id ? "wait" : "pointer",
-                    }}
-                    onMouseEnter={(e) => {
-                      if (deletando !== oc.id) {
-                        e.currentTarget.style.background = "rgba(255, 5, 113, 0.12)";
-                        e.currentTarget.style.borderColor = "rgba(255, 5, 113, 0.30)";
-                        e.currentTarget.style.color = "#ff0571";
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "rgba(255,255,255,0.04)";
-                      e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)";
-                      e.currentTarget.style.color = "rgba(255,255,255,0.45)";
-                    }}
-                  >
-                    {deletando === oc.id ? (
-                      <Loader2 size={13} className="animate-spin" />
-                    ) : (
-                      <Trash2 size={13} />
-                    )}
-                  </button>
+                {/* Fornecedor */}
+                <td style={{ ...tdBase, whiteSpace: "nowrap" }}>{oc.oc_nome_fornecedor}</td>
 
-                </div>
-              </td>
-            </tr>
-          ))}
+                {/* Valor */}
+                <td style={{ ...tdBase, fontWeight: 600, color: "#c2ff05", whiteSpace: "nowrap" }}>
+                  {formatarValor(oc.oc_valor)}
+                </td>
+
+                {/* Referência */}
+                <td style={{ ...tdBase, whiteSpace: "nowrap", color: "rgba(255,255,255,0.45)" }}>
+                  {formatarData(oc.oc_data_referencia)}
+                </td>
+
+                {/* Status */}
+                <td style={{ ...tdBase }}>
+                  <SeletorStatus oc={oc} onAtualizado={onStatusAtualizado} />
+                </td>
+
+                {/* Aprovação */}
+                <td style={{ ...tdBase }}>
+                  <SeletorAprovacao oc={oc} onAtualizado={onStatusAtualizado} />
+                </td>
+
+                {/* Ações */}
+                <td style={{ ...tdBase, whiteSpace: "nowrap" }}>
+                  <div className="flex items-center gap-2">
+
+                    {/* Documentos — ícone cinza sem NF, azul neon com NF */}
+                    <button
+                      onClick={() => onAbrirDocumentos(oc)}
+                      className="relative flex items-center justify-center w-7 h-7 rounded-md transition-all duration-150"
+                      title={temDocs ? `${totalDocs} documento(s) anexado(s)` : "Anexar documento"}
+                      style={{
+                        background:  temDocs ? "rgba(0, 191, 255, 0.10)" : "rgba(255,255,255,0.04)",
+                        border:      temDocs ? "1px solid rgba(0, 191, 255, 0.30)" : "1px solid rgba(255,255,255,0.08)",
+                        color:       temDocs ? "#00bfff" : "rgba(255,255,255,0.35)",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background  = "rgba(0, 191, 255, 0.15)";
+                        e.currentTarget.style.borderColor = "rgba(0, 191, 255, 0.40)";
+                        e.currentTarget.style.color       = "#00bfff";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background  = temDocs ? "rgba(0, 191, 255, 0.10)" : "rgba(255,255,255,0.04)";
+                        e.currentTarget.style.borderColor = temDocs ? "rgba(0, 191, 255, 0.30)" : "rgba(255,255,255,0.08)";
+                        e.currentTarget.style.color       = temDocs ? "#00bfff" : "rgba(255,255,255,0.35)";
+                      }}
+                    >
+                      <Paperclip size={13} />
+                      {/* Badge com contador */}
+                      {temDocs && (
+                        <span
+                          className="absolute -top-1.5 -right-1.5 flex items-center justify-center rounded-full text-white font-bold"
+                          style={{
+                            fontSize:   "9px",
+                            minWidth:   "14px",
+                            height:     "14px",
+                            background: "#00bfff",
+                            padding:    "0 3px",
+                          }}
+                        >
+                          {totalDocs}
+                        </span>
+                      )}
+                    </button>
+
+                    {/* Editar */}
+                    <button
+                      onClick={() => onEditar(oc.id)}
+                      className="flex items-center justify-center w-7 h-7 rounded-md transition-all duration-150"
+                      title="Editar OC"
+                      style={{
+                        background: "rgba(255,255,255,0.04)",
+                        border:     "1px solid rgba(255,255,255,0.08)",
+                        color:      "rgba(255,255,255,0.45)",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background  = "rgba(255, 163, 0, 0.12)";
+                        e.currentTarget.style.borderColor = "rgba(255, 163, 0, 0.30)";
+                        e.currentTarget.style.color       = "#ffa300";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background  = "rgba(255,255,255,0.04)";
+                        e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)";
+                        e.currentTarget.style.color       = "rgba(255,255,255,0.45)";
+                      }}
+                    >
+                      <Pencil size={13} />
+                    </button>
+
+                    {/* Deletar */}
+                    <button
+                      onClick={() => onDeletar(oc.id)}
+                      disabled={deletando === oc.id}
+                      className="flex items-center justify-center w-7 h-7 rounded-md transition-all duration-150"
+                      title="Deletar OC"
+                      style={{
+                        background: "rgba(255,255,255,0.04)",
+                        border:     "1px solid rgba(255,255,255,0.08)",
+                        color:      "rgba(255,255,255,0.45)",
+                        cursor:     deletando === oc.id ? "wait" : "pointer",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (deletando !== oc.id) {
+                          e.currentTarget.style.background  = "rgba(255, 5, 113, 0.12)";
+                          e.currentTarget.style.borderColor = "rgba(255, 5, 113, 0.30)";
+                          e.currentTarget.style.color       = "#ff0571";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background  = "rgba(255,255,255,0.04)";
+                        e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)";
+                        e.currentTarget.style.color       = "rgba(255,255,255,0.45)";
+                      }}
+                    >
+                      {deletando === oc.id ? (
+                        <Loader2 size={13} className="animate-spin" />
+                      ) : (
+                        <Trash2 size={13} />
+                      )}
+                    </button>
+
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
@@ -554,12 +581,16 @@ function TabelaOCs({ ocs, loading, onEditar, onDeletar, onStatusAtualizado, dele
 // PÁGINA PRINCIPAL — ListagemOCs
 // ─────────────────────────────────────────────
 function ListagemOCs() {
-  const [ocs, setOcs]               = useState([]);
-  const [loading, setLoading]       = useState(true);
-  const [busca, setBusca]           = useState("");
-  const [deletando, setDeletando]   = useState(null);
-  const [modalAberto, setModalAberto] = useState(false);
-  const [ocEditando, setOcEditando] = useState(null);
+  const [ocs, setOcs]                       = useState([]);
+  const [loading, setLoading]               = useState(true);
+  const [busca, setBusca]                   = useState("");
+  const [deletando, setDeletando]           = useState(null);
+  const [modalAberto, setModalAberto]       = useState(false);
+  const [ocEditando, setOcEditando]         = useState(null);
+
+  // Estados do modal de documentos
+  const [ocDocumentos, setOcDocumentos]     = useState(null);
+  const [contadorDocs, setContadorDocs]     = useState({});
 
   // ── Carrega OCs da API
   const carregarOCs = useCallback(async () => {
@@ -586,26 +617,36 @@ function ListagemOCs() {
     }
   };
 
-  // ── Abrir modal para nova OC ou edição
-  const abrirModal    = ()    => { setOcEditando(null); setModalAberto(true); };
-  const abrirEdicao   = (id) => { setOcEditando(id);   setModalAberto(true); };
-  const fecharModal   = ()    => { setModalAberto(false); setOcEditando(null); };
-  const aoSalvar      = ()    => { fecharModal(); carregarOCs(); };
+  // ── Modal OC
+  const abrirModal  = ()    => { setOcEditando(null); setModalAberto(true); };
+  const abrirEdicao = (id)  => { setOcEditando(id);   setModalAberto(true); };
+  const fecharModal = ()    => { setModalAberto(false); setOcEditando(null); };
+  const aoSalvar    = ()    => { fecharModal(); carregarOCs(); };
+
+  // ── Modal Documentos
+  const abrirDocumentos  = (oc) => setOcDocumentos(oc);
+  const fecharDocumentos = ()   => setOcDocumentos(null);
+
+  // Callback chamado pelo ModalDocumentos ao carregar/alterar documentos
+  // Atualiza o contador do badge sem recarregar todas as OCs
+  const atualizarContador = (oc_id, total) => {
+    setContadorDocs((prev) => ({ ...prev, [oc_id]: total }));
+  };
 
   // ── Filtragem por busca
   const ocsFiltradas = ocs.filter((oc) => {
     const q = busca.toLowerCase();
     return (
-      oc.oc_numero?.toLowerCase().includes(q)           ||
-      oc.oc_descricao?.toLowerCase().includes(q)        ||
-      oc.oc_nome_fornecedor?.toLowerCase().includes(q)  ||
+      oc.oc_numero?.toLowerCase().includes(q)          ||
+      oc.oc_descricao?.toLowerCase().includes(q)       ||
+      oc.oc_nome_fornecedor?.toLowerCase().includes(q) ||
       oc.oc_status?.toLowerCase().includes(q)
     );
   });
 
   // ── Separação em seções
   const ocsAndamento = ocsFiltradas.filter((oc) => STATUS_ATIVOS.includes(oc.oc_status));
-  const ocsHistorico  = ocsFiltradas; // todas, ordenadas por data (o backend já ordena)
+  const ocsHistorico = ocsFiltradas;
 
   // ─────────────────────────────────────────
   // RENDER
@@ -622,7 +663,6 @@ function ListagemOCs() {
           </p>
         </div>
 
-        {/* Controles: busca + botões */}
         <div className="flex items-center gap-3">
 
           {/* Campo de busca */}
@@ -640,17 +680,17 @@ function ListagemOCs() {
               className="pl-9 pr-4 py-2.5 rounded-lg text-sm outline-none transition-all duration-200"
               style={{
                 background: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(255,255,255,0.08)",
-                color: "#ffffff",
-                width: "220px",
+                border:     "1px solid rgba(255,255,255,0.08)",
+                color:      "#ffffff",
+                width:      "220px",
               }}
               onFocus={(e) => {
                 e.target.style.borderColor = "rgba(255,5,113,0.40)";
-                e.target.style.boxShadow = "0 0 0 3px rgba(255,5,113,0.08)";
+                e.target.style.boxShadow   = "0 0 0 3px rgba(255,5,113,0.08)";
               }}
               onBlur={(e) => {
                 e.target.style.borderColor = "rgba(255,255,255,0.08)";
-                e.target.style.boxShadow = "none";
+                e.target.style.boxShadow   = "none";
               }}
             />
           </div>
@@ -662,38 +702,38 @@ function ListagemOCs() {
             title="Atualizar"
             style={{
               background: "rgba(255,255,255,0.04)",
-              border: "1px solid rgba(255,255,255,0.08)",
-              color: "rgba(255,255,255,0.45)",
+              border:     "1px solid rgba(255,255,255,0.08)",
+              color:      "rgba(255,255,255,0.45)",
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = "rgba(255,255,255,0.08)";
-              e.currentTarget.style.color = "#ffffff";
+              e.currentTarget.style.color      = "#ffffff";
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.background = "rgba(255,255,255,0.04)";
-              e.currentTarget.style.color = "rgba(255,255,255,0.45)";
+              e.currentTarget.style.color      = "rgba(255,255,255,0.45)";
             }}
           >
             <RefreshCw size={15} />
           </button>
 
-          {/* Nova OC — botão principal */}
+          {/* Nova OC */}
           <button
             onClick={abrirModal}
             className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150"
             style={{
               background: "#ff0571",
-              color: "#ffffff",
-              border: "1px solid rgba(255,5,113,0.50)",
-              boxShadow: "0 0 20px rgba(255,5,113,0.25)",
+              color:      "#ffffff",
+              border:     "1px solid rgba(255,5,113,0.50)",
+              boxShadow:  "0 0 20px rgba(255,5,113,0.25)",
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = "#e0044f";
-              e.currentTarget.style.boxShadow = "0 0 28px rgba(255,5,113,0.40)";
+              e.currentTarget.style.boxShadow  = "0 0 28px rgba(255,5,113,0.40)";
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.background = "#ff0571";
-              e.currentTarget.style.boxShadow = "0 0 20px rgba(255,5,113,0.25)";
+              e.currentTarget.style.boxShadow  = "0 0 20px rgba(255,5,113,0.25)";
             }}
           >
             <Plus size={16} />
@@ -716,6 +756,8 @@ function ListagemOCs() {
           onEditar={abrirEdicao}
           onDeletar={handleDeletar}
           onStatusAtualizado={carregarOCs}
+          onAbrirDocumentos={abrirDocumentos}
+          contadorDocs={contadorDocs}
           deletando={deletando}
         />
       </div>
@@ -739,16 +781,27 @@ function ListagemOCs() {
           onEditar={abrirEdicao}
           onDeletar={handleDeletar}
           onStatusAtualizado={carregarOCs}
+          onAbrirDocumentos={abrirDocumentos}
+          contadorDocs={contadorDocs}
           deletando={deletando}
         />
       </div>
 
-      {/* ── Modal ── */}
+      {/* ── Modal OC ── */}
       {modalAberto && (
         <ModalOC
           ocId={ocEditando}
           onFechar={fecharModal}
           onSalvo={aoSalvar}
+        />
+      )}
+
+      {/* ── Modal Documentos ── */}
+      {ocDocumentos && (
+        <ModalDocumentos
+          oc={ocDocumentos}
+          onFechar={fecharDocumentos}
+          onContadorAtualizado={atualizarContador}
         />
       )}
 

@@ -95,3 +95,40 @@ export const deletarFornecedor = async (id) => {
   const response = await api.delete(`/fornecedores.php?id=${id}`);
   return response.data;
 };
+
+// =============================================
+// NOTA FISCAL / DOCUMENTOS
+// =============================================
+
+/**
+ * Lista todos os documentos anexados a uma OC
+ */
+export const listarDocumentos = async (oc_id) => {
+  const response = await api.get(`/notafiscal.php?oc_id=${oc_id}`);
+  return response.data;
+};
+
+/**
+ * Faz upload de um PDF para uma OC
+ * Usa FormData pois envia arquivo binário
+ */
+export const uploadDocumento = async (oc_id, arquivo) => {
+  const formData = new FormData();
+  formData.append('oc_id', oc_id);
+  formData.append('arquivo', arquivo);
+
+  const response = await api.post('/notafiscal.php', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return response.data;
+};
+
+/**
+ * Remove um documento pelo ID
+ */
+export const deletarDocumento = async (id) => {
+  const response = await api.delete(`/notafiscal.php?id=${id}`);
+  return response.data;
+};

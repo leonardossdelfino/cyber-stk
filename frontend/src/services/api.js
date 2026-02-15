@@ -132,3 +132,47 @@ export const deletarDocumento = async (id) => {
   const response = await api.delete(`/notafiscal.php?id=${id}`);
   return response.data;
 };
+
+// =============================================
+// CONTAS FIXAS
+// =============================================
+
+/**
+ * Lista todas as contas fixas
+ */
+export const listarContasFixas = async () => {
+  const response = await api.get('/contas_fixas.php');
+  return response.data;
+};
+
+/**
+ * Busca uma conta fixa pelo ID
+ */
+export const buscarContaFixa = async (id) => {
+  const response = await api.get(`/contas_fixas.php?id=${id}`);
+  return response.data;
+};
+
+/**
+ * Cria uma nova conta fixa
+ */
+export const criarContaFixa = async (dados) => {
+  const response = await api.post('/contas_fixas.php', dados);
+  return response.data;
+};
+
+/**
+ * Atualiza uma conta fixa existente
+ */
+export const atualizarContaFixa = async (id, dados) => {
+  const response = await api.put(`/contas_fixas.php?id=${id}`, dados);
+  return response.data;
+};
+
+/**
+ * Remove uma conta fixa
+ */
+export const deletarContaFixa = async (id) => {
+  const response = await api.delete(`/contas_fixas.php?id=${id}`);
+  return response.data;
+};

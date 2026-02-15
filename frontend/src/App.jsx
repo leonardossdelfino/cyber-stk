@@ -8,6 +8,7 @@ import Layout        from "./components/Layout";
 import Dashboard     from "./pages/Dashboard";
 import ListagemOCs   from "./pages/ListagemOCs";
 import Configuracoes from "./pages/Configuracoes";
+import ContasFixas   from "./pages/ContasFixas";
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
           <Route path="dashboard"     element={<Dashboard />} />
           <Route path="ordens"        element={<ListagemOCs />} />
           <Route path="configuracoes" element={<Configuracoes />} />
+          <Route path="contas-fixas"  element={<ContasFixas />} />
         </Route>
       </Routes>
     </BrowserRouter>

@@ -3,3 +3,9 @@
 @tailwind base;       /* Reset e estilos base */
 @tailwind components; /* Classes de componentes */
 @tailwind utilities;  /* Classes utilitárias (as que mais usamos) */
+
+/* ── Selects com tema escuro ── */
+select option {
+  background-color: #1a1a1a;
+  color: #ffffff;
+}

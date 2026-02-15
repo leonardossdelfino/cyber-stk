@@ -18,7 +18,8 @@ import {
   CheckSquare,
   ClipboardList,
   Cpu,
-  AlertTriangle
+  AlertTriangle,
+  Receipt,
 } from "lucide-react";
 
 function Layout() {
@@ -43,7 +44,6 @@ function Layout() {
       >
 
         {/* ── Logo ── */}
-        {/* ── Logo ── */}
         <div
           className="p-6"
           style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.06)" }}
@@ -58,23 +58,14 @@ function Layout() {
               xmlns="http://www.w3.org/2000/svg"
               style={{ flexShrink: 0 }}
             >
-              {/* Círculo externo */}
               <circle cx="50" cy="50" r="46" stroke="#ff0571" strokeWidth="4" fill="none" />
-
-              {/* Linha divisória horizontal */}
               <line x1="4" y1="50" x2="96" y2="50" stroke="#ff0571" strokeWidth="4" />
-
-              {/* Superlaser (círculo menor — lado esquerdo superior) */}
               <circle cx="35" cy="35" r="10" stroke="#ff0571" strokeWidth="3.5" fill="none" />
-              <circle cx="35" cy="35" r="4"  fill="#ff0571" />
-
-              {/* Linhas decorativas — hemisfério superior */}
+              <circle cx="35" cy="35" r="4" fill="#ff0571" />
               <line x1="52" y1="28" x2="76" y2="28" stroke="#ff0571" strokeWidth="3" strokeLinecap="round" />
               <line x1="58" y1="20" x2="78" y2="20" stroke="#ff0571" strokeWidth="3" strokeLinecap="round" />
               <line x1="55" y1="36" x2="72" y2="36" stroke="#ff0571" strokeWidth="3" strokeLinecap="round" />
               <line x1="62" y1="44" x2="76" y2="44" stroke="#ff0571" strokeWidth="2.5" strokeLinecap="round" />
-
-              {/* Linhas decorativas — hemisfério inferior */}
               <line x1="20" y1="62" x2="50" y2="62" stroke="#ff0571" strokeWidth="3" strokeLinecap="round" />
               <line x1="26" y1="70" x2="58" y2="70" stroke="#ff0571" strokeWidth="3" strokeLinecap="round" />
               <line x1="20" y1="78" x2="52" y2="78" stroke="#ff0571" strokeWidth="3" strokeLinecap="round" />
@@ -86,6 +77,9 @@ function Layout() {
               <span className="text-white"> Finance</span>
             </h1>
           </div>
+          <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.3)" }}>
+            Sistema Financeiro
+          </p>
         </div>
 
         {/* ── Navegação ── */}
@@ -143,16 +137,40 @@ function Layout() {
             )}
           </NavLink>
 
+          {/* Contas Fixas */}
+          <NavLink
+            to="/contas-fixas"
+            className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200"
+            style={({ isActive }) =>
+              isActive
+                ? {
+                    background: "rgba(255, 5, 113, 0.12)",
+                    color: "#ff0571",
+                    border: "1px solid rgba(255, 5, 113, 0.25)",
+                    boxShadow: "0 0 12px rgba(255, 5, 113, 0.10)",
+                  }
+                : {
+                    color: "rgba(255,255,255,0.45)",
+                    border: "1px solid transparent",
+                  }
+            }
+          >
+            {({ isActive }) => (
+              <>
+                <Receipt size={18} style={{ color: isActive ? "#ff0571" : "rgba(255,255,255,0.35)" }} />
+                Contas Fixas
+              </>
+            )}
+          </NavLink>
+
           {/* ── Configurações (dropdown) ── */}
           <div>
             <button
               onClick={() => setConfigAberto(!configAberto)}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200"
               style={{
-                color: configAberto ? "#ffa300" : "rgba(255,255,255,0.45)",
-                border: configAberto
-                  ? "1px solid rgba(255, 163, 0, 0.25)"
-                  : "1px solid transparent",
+                color:      configAberto ? "#ffa300" : "rgba(255,255,255,0.45)",
+                border:     configAberto ? "1px solid rgba(255, 163, 0, 0.25)" : "1px solid transparent",
                 background: configAberto ? "rgba(255, 163, 0, 0.08)" : "transparent",
               }}
             >
@@ -170,46 +188,44 @@ function Layout() {
             {/* Itens do dropdown */}
             {configAberto && (
               <div className="ml-4 mt-1 space-y-1">
-
                 {[
-  { aba: "fornecedores",     icon: Users,         label: "Fornecedores"       },
-  { aba: "categorias",       icon: Tag,           label: "Categorias"          },
-  { aba: "formas_pagamento", icon: CreditCard,    label: "Formas de Pagamento" },
-  { aba: "status_aprovacao", icon: CheckSquare,   label: "Status de Aprovação" },
-  { aba: "status_oc",        icon: ClipboardList, label: "Status da OC"        },
-  { aba: "perifericos",      icon: Cpu,           label: "Periféricos"         },
-  { aba: "incidentes",       icon: AlertTriangle, label: "Incidentes" },
-].map(({ aba, icon: Icon, label }) => {
-  const itemAtivo = searchParams.get("aba") === aba;
-  return (
-    <button
-      key={aba}
-      onClick={() => irParaConfiguracoes(aba)}
-      className="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-xs font-medium transition-all duration-200"
-      style={{
-        color:      itemAtivo ? "#ffa300" : "rgba(255,255,255,0.4)",
-        background: itemAtivo ? "rgba(255,163,0,0.1)" : "transparent",
-        border:     itemAtivo ? "1px solid rgba(255,163,0,0.2)" : "1px solid transparent",
-      }}
-      onMouseEnter={e => {
-        if (!itemAtivo) {
-          e.currentTarget.style.color = "#ffa300";
-          e.currentTarget.style.background = "rgba(255,163,0,0.06)";
-        }
-      }}
-      onMouseLeave={e => {
-        if (!itemAtivo) {
-          e.currentTarget.style.color = "rgba(255,255,255,0.4)";
-          e.currentTarget.style.background = "transparent";
-        }
-      }}
-    >
-      <Icon size={14} />
-      {label}
-    </button>
-  );
-})}
-
+                  { aba: "fornecedores",     icon: Users,         label: "Fornecedores"        },
+                  { aba: "categorias",       icon: Tag,           label: "Categorias"           },
+                  { aba: "formas_pagamento", icon: CreditCard,    label: "Formas de Pagamento"  },
+                  { aba: "status_aprovacao", icon: CheckSquare,   label: "Status de Aprovação"  },
+                  { aba: "status_oc",        icon: ClipboardList, label: "Status da OC"         },
+                  { aba: "perifericos",      icon: Cpu,           label: "Periféricos"          },
+                  { aba: "incidentes",       icon: AlertTriangle, label: "Incidentes"           },
+                ].map(({ aba, icon: Icon, label }) => {
+                  const itemAtivo = searchParams.get("aba") === aba;
+                  return (
+                    <button
+                      key={aba}
+                      onClick={() => irParaConfiguracoes(aba)}
+                      className="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-xs font-medium transition-all duration-200"
+                      style={{
+                        color:      itemAtivo ? "#ffa300" : "rgba(255,255,255,0.4)",
+                        background: itemAtivo ? "rgba(255,163,0,0.1)" : "transparent",
+                        border:     itemAtivo ? "1px solid rgba(255,163,0,0.2)" : "1px solid transparent",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!itemAtivo) {
+                          e.currentTarget.style.color      = "#ffa300";
+                          e.currentTarget.style.background = "rgba(255,163,0,0.06)";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!itemAtivo) {
+                          e.currentTarget.style.color      = "rgba(255,255,255,0.4)";
+                          e.currentTarget.style.background = "transparent";
+                        }
+                      }}
+                    >
+                      <Icon size={14} />
+                      {label}
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -222,7 +238,7 @@ function Layout() {
           style={{ borderTop: "1px solid rgba(255, 255, 255, 0.06)" }}
         >
           <p className="text-xs" style={{ color: "rgba(255,255,255,0.2)" }}>
-            v0.2.0
+            v0.8.0
           </p>
         </div>
 

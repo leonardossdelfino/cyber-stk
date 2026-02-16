@@ -1,40 +1,126 @@
 // =============================================
-// ARQUIVO: src/components/ModalOC.jsx
-// FUNÇÃO: Modal de criação e edição de OC
-// Efeito glassmorphism — fundo vidro translúcido
-// Opções carregadas dinamicamente do banco
+// ARQUIVO: src/components/ModalContaFixa.jsx
+// FUNÇÃO: Modal de criação e edição de Conta Fixa
+// Efeito glassmorphism — mesmo padrão do ModalOC
+// Opções de forma de pagamento vindas do banco
 // =============================================
 
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { X, Save, Loader2 } from "lucide-react";
-import { useOC } from "../hooks/useOC";
+import {
+  buscarContaFixa,
+  criarContaFixa,
+  atualizarContaFixa,
+  listarConfiguracao,
+} from "../services/api";
 import InputFornecedor from "./InputFornecedor";
 import Campo from "./CampoFormulario";
 import { estiloInput, aoFocar, aoDesfocar } from "../styles/inputStyles";
 
+// Status são estruturais do sistema — não precisam vir do banco
+const STATUS_OPCOES = ["Ativa", "Inativa", "Cancelada"];
+
 // ─────────────────────────────────────────────
 // MODAL PRINCIPAL
 // ─────────────────────────────────────────────
-function ModalOC({ ocId = null, onFechar, onSalvo }) {
-  const {
-    form,
-    loading,
-    saving,
-    erro,
-    sucesso,
-    handleChange,
-    handleSubmit,
-    setField,
-    opcoesStatus,
-    opcoesPagamento,
-    opcoesAprovacao,
-    fornecedores,
-  } = useOC(ocId, onSalvo);
+function ModalContaFixa({ contaId, onFechar, onSalvo }) {
+  const [form, setForm] = useState({
+    nome:            "",
+    fornecedor:      "",
+    valor:           "",
+    dia_vencimento:  "",
+    dia_fechamento:  "",
+    forma_pagamento: "",
+    categoria:       "",
+    status:          "Ativa",
+    observacoes:     "",
+  });
+  const [categorias, setCategorias]           = useState([]);
+  const [formasPagamento, setFormasPagamento] = useState([]);
+  const [salvando, setSalvando]               = useState(false);
+  const [carregando, setCarregando]           = useState(false);
+  const [erro, setErro]                       = useState("");
 
+  // Bloqueia scroll da página
   useEffect(() => {
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = ""; };
   }, []);
+
+  // Carrega opções e dados da conta se for edição
+  useEffect(() => {
+    const carregar = async () => {
+      try {
+        setCarregando(true);
+
+        const [cats, formas] = await Promise.all([
+          listarConfiguracao("categorias"),
+          listarConfiguracao("formas_pagamento"),
+        ]);
+
+        setCategorias(cats);
+        setFormasPagamento(formas);
+
+        if (contaId) {
+          const conta = await buscarContaFixa(contaId);
+          setForm({
+            nome:            conta.nome,
+            fornecedor:      conta.fornecedor,
+            valor:           conta.valor,
+            dia_vencimento:  conta.dia_vencimento,
+            dia_fechamento:  conta.dia_fechamento ?? "",
+            forma_pagamento: conta.forma_pagamento,
+            categoria:       conta.categoria,
+            status:          conta.status,
+            observacoes:     conta.observacoes ?? "",
+          });
+        } else {
+          // Pré-seleciona o primeiro item de cada lista
+          setForm((prev) => ({
+            ...prev,
+            categoria:       cats.length  > 0 ? cats[0].nome   : "",
+            forma_pagamento: formas.length > 0 ? formas[0].nome : "",
+          }));
+        }
+      } catch {
+        setErro("Erro ao carregar dados.");
+      } finally {
+        setCarregando(false);
+      }
+    };
+    carregar();
+  }, [contaId]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setErro("");
+
+    if (!form.nome.trim())                        return setErro("Nome é obrigatório.");
+    if (!form.fornecedor.trim())                  return setErro("Fornecedor é obrigatório.");
+    if (!form.valor || isNaN(Number(form.valor))) return setErro("Valor inválido.");
+    if (!form.dia_vencimento)                     return setErro("Dia de vencimento é obrigatório.");
+    if (!form.categoria)                          return setErro("Categoria é obrigatória.");
+    if (!form.forma_pagamento)                    return setErro("Forma de pagamento é obrigatória.");
+
+    try {
+      setSalvando(true);
+      if (contaId) {
+        await atualizarContaFixa(contaId, form);
+      } else {
+        await criarContaFixa(form);
+      }
+      onSalvo();
+    } catch {
+      setErro("Erro ao salvar. Tente novamente.");
+    } finally {
+      setSalvando(false);
+    }
+  };
 
   const handleOverlayClick = (e) => {
     if (e.target === e.currentTarget) onFechar();
@@ -59,7 +145,7 @@ function ModalOC({ ocId = null, onFechar, onSalvo }) {
       <div
         style={{
           width:                "100%",
-          maxWidth:             "740px",
+          maxWidth:             "640px",
           maxHeight:            "90vh",
           overflowY:            "auto",
           borderRadius:         "16px",
@@ -84,14 +170,14 @@ function ModalOC({ ocId = null, onFechar, onSalvo }) {
         >
           <div>
             <h2 className="text-base font-semibold text-white">
-              {ocId ? "Editar Ordem de Compra" : "Nova Ordem de Compra"}
+              {contaId ? "Editar Conta Fixa" : "Nova Conta Fixa"}
             </h2>
             <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>
-              {ocId ? `Editando OC #${ocId}` : "Preencha os dados da nova OC"}
+              Preencha os dados da conta recorrente
             </p>
           </div>
-
           <button
+            type="button"
             onClick={onFechar}
             className="flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-150"
             style={{
@@ -114,8 +200,8 @@ function ModalOC({ ocId = null, onFechar, onSalvo }) {
           </button>
         </div>
 
-        {/* Conteúdo */}
-        {loading ? (
+        {/* Corpo */}
+        {carregando ? (
           <div className="flex items-center justify-center py-20 gap-3">
             <Loader2 size={20} style={{ color: "#ff0571" }} className="animate-spin" />
             <span className="text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>
@@ -125,7 +211,6 @@ function ModalOC({ ocId = null, onFechar, onSalvo }) {
         ) : (
           <form onSubmit={handleSubmit} className="p-6">
 
-            {/* Feedback */}
             {erro && (
               <div
                 className="mb-5 px-4 py-3 rounded-lg text-sm"
@@ -138,18 +223,6 @@ function ModalOC({ ocId = null, onFechar, onSalvo }) {
                 {erro}
               </div>
             )}
-            {sucesso && (
-              <div
-                className="mb-5 px-4 py-3 rounded-lg text-sm"
-                style={{
-                  background: "rgba(194, 255, 5, 0.08)",
-                  border:     "1px solid rgba(194, 255, 5, 0.25)",
-                  color:      "#c2ff05",
-                }}
-              >
-                {sucesso}
-              </div>
-            )}
 
             {/* Seção 1 — Identificação */}
             <p
@@ -160,74 +233,91 @@ function ModalOC({ ocId = null, onFechar, onSalvo }) {
             </p>
 
             <div className="grid grid-cols-2 gap-4 mb-6">
-              <Campo label="Número da OC" obrigatorio>
+              <Campo label="Nome da Conta" obrigatorio>
                 <input
-                  type="text"
-                  name="oc_numero"
-                  value={form.oc_numero}
+                  name="nome"
+                  value={form.nome}
                   onChange={handleChange}
-                  placeholder="Ex: OC-2024-001"
+                  placeholder="Ex: Internet Vivo"
                   style={estiloInput}
                   onFocus={aoFocar}
                   onBlur={aoDesfocar}
                 />
               </Campo>
 
-              <Campo label="Solicitante">
-                <input
-                  type="text"
-                  name="oc_solicitante"
-                  value={form.oc_solicitante}
+              <Campo label="Fornecedor" obrigatorio>
+                <InputFornecedor
+                  value={form.fornecedor}
+                  onChange={(val) => setForm((prev) => ({ ...prev, fornecedor: val }))}
+                />
+              </Campo>
+
+              <Campo label="Categoria" obrigatorio>
+                <select
+                  name="categoria"
+                  value={form.categoria}
                   onChange={handleChange}
-                  placeholder="Nome de quem solicitou"
+                  style={{ ...estiloInput, cursor: "pointer" }}
+                  onFocus={aoFocar}
+                  onBlur={aoDesfocar}
+                >
+                  {categorias.map((cat) => (
+                    <option key={cat.id} value={cat.nome} style={{ background: "#1a1a1a" }}>
+                      {cat.nome}
+                    </option>
+                  ))}
+                </select>
+              </Campo>
+
+              <Campo label="Valor Mensal (R$)" obrigatorio>
+                <input
+                  name="valor"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={form.valor}
+                  onChange={handleChange}
+                  placeholder="0.00"
                   style={estiloInput}
                   onFocus={aoFocar}
                   onBlur={aoDesfocar}
                 />
               </Campo>
-
-              <div className="col-span-2">
-                <Campo label="Descrição" obrigatorio>
-                  <textarea
-                    name="oc_descricao"
-                    value={form.oc_descricao}
-                    onChange={handleChange}
-                    placeholder="Descreva o que está sendo comprado..."
-                    rows={3}
-                    style={{ ...estiloInput, resize: "vertical" }}
-                    onFocus={aoFocar}
-                    onBlur={aoDesfocar}
-                  />
-                </Campo>
-              </div>
             </div>
 
-            {/* Seção 2 — Fornecedor e Valor */}
+            {/* Seção 2 — Datas e Pagamento */}
             <p
               className="text-xs font-semibold uppercase tracking-widest mb-4"
               style={{ color: "#ffa300" }}
             >
-              Fornecedor e Valor
+              Datas e Pagamento
             </p>
 
             <div className="grid grid-cols-2 gap-4 mb-6">
-              <Campo label="Fornecedor" obrigatorio>
-                <InputFornecedor
-                  value={form.oc_nome_fornecedor}
-                  fornecedores={fornecedores}
-                  onChange={(val) => setField("oc_nome_fornecedor", val)}
+              <Campo label="Dia de Vencimento" obrigatorio>
+                <input
+                  name="dia_vencimento"
+                  type="number"
+                  min="1"
+                  max="31"
+                  value={form.dia_vencimento}
+                  onChange={handleChange}
+                  placeholder="Ex: 10"
+                  style={estiloInput}
+                  onFocus={aoFocar}
+                  onBlur={aoDesfocar}
                 />
               </Campo>
 
-              <Campo label="Valor (R$)" obrigatorio>
+              <Campo label="Dia de Fechamento">
                 <input
+                  name="dia_fechamento"
                   type="number"
-                  name="oc_valor"
-                  value={form.oc_valor}
+                  min="1"
+                  max="31"
+                  value={form.dia_fechamento}
                   onChange={handleChange}
-                  placeholder="0.00"
-                  step="0.01"
-                  min="0"
+                  placeholder="Ex: 5 (opcional)"
                   style={estiloInput}
                   onFocus={aoFocar}
                   onBlur={aoDesfocar}
@@ -236,88 +326,59 @@ function ModalOC({ ocId = null, onFechar, onSalvo }) {
 
               <Campo label="Forma de Pagamento" obrigatorio>
                 <select
-                  name="oc_forma_pagamento"
-                  value={form.oc_forma_pagamento}
+                  name="forma_pagamento"
+                  value={form.forma_pagamento}
                   onChange={handleChange}
                   style={{ ...estiloInput, cursor: "pointer" }}
                   onFocus={aoFocar}
                   onBlur={aoDesfocar}
                 >
-                  {opcoesPagamento.map((op) => (
-                    <option key={op} value={op} style={{ background: "#1a1a1a" }}>
-                      {op}
+                  {formasPagamento.map((f) => (
+                    <option key={f.id} value={f.nome} style={{ background: "#1a1a1a" }}>
+                      {f.nome}
                     </option>
                   ))}
                 </select>
-              </Campo>
-
-              <Campo label="Data de Abertura" obrigatorio>
-                <input
-                  type="date"
-                  name="oc_data_referencia"
-                  value={form.oc_data_referencia}
-                  onChange={handleChange}
-                  style={{ ...estiloInput, colorScheme: "dark" }}
-                  onFocus={aoFocar}
-                  onBlur={aoDesfocar}
-                />
-              </Campo>
-            </div>
-
-            {/* Seção 3 — Status e Aprovação */}
-            <p
-              className="text-xs font-semibold uppercase tracking-widest mb-4"
-              style={{ color: "#c2ff05" }}
-            >
-              Status e Aprovação
-            </p>
-
-            <div className="grid grid-cols-3 gap-4 mb-6">
-              <Campo label="Centro de Custo">
-                <input
-                  type="text"
-                  name="oc_centro_de_custo"
-                  value={form.oc_centro_de_custo}
-                  onChange={handleChange}
-                  placeholder="Ex: TI, Marketing..."
-                  style={estiloInput}
-                  onFocus={aoFocar}
-                  onBlur={aoDesfocar}
-                />
               </Campo>
 
               <Campo label="Status">
                 <select
-                  name="oc_status"
-                  value={form.oc_status}
+                  name="status"
+                  value={form.status}
                   onChange={handleChange}
                   style={{ ...estiloInput, cursor: "pointer" }}
                   onFocus={aoFocar}
                   onBlur={aoDesfocar}
                 >
-                  {opcoesStatus.map((op) => (
-                    <option key={op} value={op} style={{ background: "#1a1a1a" }}>
-                      {op}
+                  {STATUS_OPCOES.map((s) => (
+                    <option key={s} value={s} style={{ background: "#1a1a1a" }}>
+                      {s}
                     </option>
                   ))}
                 </select>
               </Campo>
+            </div>
 
-              <Campo label="Aprovação">
-                <select
-                  name="oc_aprovacao"
-                  value={form.oc_aprovacao}
+            {/* Seção 3 — Observações */}
+            <p
+              className="text-xs font-semibold uppercase tracking-widest mb-4"
+              style={{ color: "#c2ff05" }}
+            >
+              Observações
+            </p>
+
+            <div className="mb-6">
+              <Campo label="Observações">
+                <textarea
+                  name="observacoes"
+                  value={form.observacoes}
                   onChange={handleChange}
-                  style={{ ...estiloInput, cursor: "pointer" }}
+                  placeholder="Informações adicionais..."
+                  rows={3}
+                  style={{ ...estiloInput, resize: "vertical" }}
                   onFocus={aoFocar}
                   onBlur={aoDesfocar}
-                >
-                  {opcoesAprovacao.map((op) => (
-                    <option key={op} value={op} style={{ background: "#1a1a1a" }}>
-                      {op}
-                    </option>
-                  ))}
-                </select>
+                />
               </Campo>
             </div>
 
@@ -349,22 +410,22 @@ function ModalOC({ ocId = null, onFechar, onSalvo }) {
 
               <button
                 type="submit"
-                disabled={saving}
+                disabled={salvando}
                 className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150"
                 style={{
-                  background: saving ? "rgba(255, 5, 113, 0.40)" : "#ff0571",
+                  background: salvando ? "rgba(255,5,113,0.40)" : "#ff0571",
                   color:      "#ffffff",
-                  border:     "1px solid rgba(255, 5, 113, 0.60)",
-                  boxShadow:  saving ? "none" : "0 0 20px rgba(255, 5, 113, 0.30)",
-                  cursor:     saving ? "not-allowed" : "pointer",
-                  opacity:    saving ? 0.7 : 1,
+                  border:     "1px solid rgba(255,5,113,0.60)",
+                  boxShadow:  salvando ? "none" : "0 0 20px rgba(255,5,113,0.30)",
+                  cursor:     salvando ? "not-allowed" : "pointer",
+                  opacity:    salvando ? 0.7 : 1,
                 }}
               >
-                {saving
+                {salvando
                   ? <Loader2 size={15} className="animate-spin" />
                   : <Save size={15} />
                 }
-                {saving ? "Salvando..." : "Salvar OC"}
+                {salvando ? "Salvando..." : contaId ? "Salvar Alterações" : "Criar Conta"}
               </button>
             </div>
 
@@ -375,4 +436,4 @@ function ModalOC({ ocId = null, onFechar, onSalvo }) {
   );
 }
 
-export default ModalOC;
+export default ModalContaFixa;

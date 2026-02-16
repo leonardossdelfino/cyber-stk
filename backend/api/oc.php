@@ -1,24 +1,21 @@
 <?php
 // =============================================================
-// ARQUIVO: /backend/api/oc.php
+// ARQUIVO: backend/api/oc.php
 // FUNÇÃO: Endpoint da API para Ordens de Compra
 // GET / POST / PUT / DELETE
 // =============================================================
 
-// CORS — em produção substituir * pelo domínio real ex: https://seusite.com.br
 $origem_permitida = getenv("CORS_ORIGIN") ?: "*";
 header("Access-Control-Allow-Origin: $origem_permitida");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Content-Type: application/json; charset=UTF-8");
 
-// Responde preflight OPTIONS sem chegar no PHP
 if ($_SERVER["REQUEST_METHOD"] === "OPTIONS") {
     http_response_code(200);
     exit();
 }
 
-// Conexão com tratamento de erro amigável
 try {
     require_once "../config/database.php";
     require_once "../models/OC.php";
@@ -34,10 +31,9 @@ try {
 $method = $_SERVER["REQUEST_METHOD"];
 $id     = isset($_GET["id"]) ? intval($_GET["id"]) : null;
 
-// Lê e normaliza o body uma única vez (usado em POST e PUT)
 function lerBody(): ?array {
     $raw  = file_get_contents("php://input");
-    $raw  = ltrim($raw, "\xEF\xBB\xBF"); // remove UTF-8 BOM (Windows)
+    $raw  = ltrim($raw, "\xEF\xBB\xBF");
     $body = json_decode($raw, true);
     return (is_array($body)) ? $body : null;
 }
@@ -76,7 +72,6 @@ switch ($method) {
             break;
         }
 
-        // Valida campos obrigatórios
         $obrigatorios = ["oc_numero", "oc_descricao", "oc_nome_fornecedor",
                          "oc_valor",  "oc_forma_pagamento", "oc_data_referencia"];
         foreach ($obrigatorios as $campo) {
@@ -109,11 +104,23 @@ switch ($method) {
 
     // ---------------------------------------------------------
     // PUT → Atualiza uma OC existente
+    // Verifica existência ANTES de atualizar para distinguir
+    // "não encontrado" de "sem alterações" (ambos rowCount = 0)
     // ---------------------------------------------------------
     case "PUT":
         if (!$id) {
             http_response_code(400);
             echo json_encode(["success" => false, "message" => "ID não informado."]);
+            break;
+        }
+
+        // Verifica se a OC existe antes de tentar atualizar
+        $oc->id = $id;
+        $existe = $oc->buscarPorId()->fetch(PDO::FETCH_ASSOC);
+
+        if (!$existe) {
+            http_response_code(404);
+            echo json_encode(["success" => false, "message" => "OC não encontrada."]);
             break;
         }
 
@@ -125,24 +132,20 @@ switch ($method) {
             break;
         }
 
-        $oc->id                 = $id;
         $oc->oc_numero          = $body["oc_numero"]          ?? "";
         $oc->oc_descricao       = $body["oc_descricao"]       ?? "";
         $oc->oc_nome_fornecedor = $body["oc_nome_fornecedor"] ?? "";
         $oc->oc_valor           = floatval($body["oc_valor"]  ?? 0);
-        $oc->oc_forma_pagamento = $body["oc_forma_pagamento"] ?? "Boleto";
+        $oc->oc_forma_pagamento = $body["oc_forma_pagamento"] ?? "";
         $oc->oc_data_referencia = $body["oc_data_referencia"] ?? "";
-        $oc->oc_status          = $body["oc_status"]          ?? "OC Aberta";
-        $oc->oc_aprovacao       = $body["oc_aprovacao"]       ?? "Aguardando aprovação";
+        $oc->oc_status          = $body["oc_status"]          ?? "";
+        $oc->oc_aprovacao       = $body["oc_aprovacao"]       ?? "";
         $oc->oc_centro_de_custo = $body["oc_centro_de_custo"] ?? "";
         $oc->oc_solicitante     = $body["oc_solicitante"]     ?? "";
 
-        if ($oc->atualizar()) {
-            echo json_encode(["success" => true, "message" => "OC atualizada com sucesso."]);
-        } else {
-            http_response_code(404);
-            echo json_encode(["success" => false, "message" => "OC não encontrada ou sem alterações."]);
-        }
+        // rowCount = 0 significa sem alterações — ainda é sucesso
+        $oc->atualizar();
+        echo json_encode(["success" => true, "message" => "OC atualizada com sucesso."]);
         break;
 
     // ---------------------------------------------------------

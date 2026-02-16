@@ -1,13 +1,13 @@
 <?php
 // =============================================================
-// ARQUIVO: /backend/models/OC.php
+// ARQUIVO: backend/models/OC.php
 // FUNÇÃO: Model das Ordens de Compra
 // Prepared statements em todas as queries (proteção SQL Injection)
 //
-// NOTA: htmlspecialchars() NÃO é usado antes de salvar no banco
-// pois causaria double encoding ("Dell & Co" → "Dell &amp; Co" no banco)
-// Os prepared statements já protegem contra SQL Injection.
-// Sanitização HTML deve ser feita apenas na camada de exibição.
+// NOTA: strip_tags() foi removido dos campos que vêm de tabelas
+// de configuração (status, aprovação, pagamento) pois pode
+// remover conteúdo válido. Os prepared statements já protegem
+// contra SQL Injection. trim() é suficiente para limpeza.
 // =============================================================
 
 class OC {
@@ -34,7 +34,7 @@ class OC {
     }
 
     // ---------------------------------------------------------
-    // Retorna todas as OCs, colunas explícitas (sem SELECT *)
+    // Retorna todas as OCs ordenadas por data de criação
     // ---------------------------------------------------------
     public function listar() {
         $query = "SELECT
@@ -56,7 +56,7 @@ class OC {
         $query = "SELECT * FROM {$this->table} WHERE id = :id LIMIT 1";
         $stmt  = $this->conn->prepare($query);
         $this->id = intval($this->id);
-        $stmt->bindParam(":id", $this->id, PDO::PARAM_INT);
+        $stmt->bindValue(":id", $this->id, PDO::PARAM_INT);
         $stmt->execute();
         return $stmt;
     }
@@ -77,23 +77,25 @@ class OC {
 
         $stmt = $this->conn->prepare($query);
 
-        $stmt->bindValue(":oc_numero",           strip_tags($this->oc_numero));
-        $stmt->bindValue(":oc_descricao",        strip_tags($this->oc_descricao));
-        $stmt->bindValue(":oc_nome_fornecedor",  strip_tags($this->oc_nome_fornecedor));
-        $stmt->bindValue(":oc_valor",            floatval($this->oc_valor),  PDO::PARAM_STR);
-        $stmt->bindValue(":oc_status",           strip_tags($this->oc_status));
-        $stmt->bindValue(":oc_forma_pagamento",  strip_tags($this->oc_forma_pagamento));
-        $stmt->bindValue(":oc_aprovacao",        strip_tags($this->oc_aprovacao));
-        $stmt->bindValue(":oc_data_referencia",  strip_tags($this->oc_data_referencia));
-        $stmt->bindValue(":oc_centro_de_custo",  strip_tags($this->oc_centro_de_custo));
-        $stmt->bindValue(":oc_solicitante",      strip_tags($this->oc_solicitante));
+        // trim() limpa espaços extras — prepared statements já protegem SQL Injection
+        $stmt->bindValue(":oc_numero",          trim($this->oc_numero          ?? ""));
+        $stmt->bindValue(":oc_descricao",       trim($this->oc_descricao       ?? ""));
+        $stmt->bindValue(":oc_nome_fornecedor", trim($this->oc_nome_fornecedor ?? ""));
+        $stmt->bindValue(":oc_valor",           floatval($this->oc_valor), PDO::PARAM_STR);
+        $stmt->bindValue(":oc_status",          trim($this->oc_status          ?? ""));
+        $stmt->bindValue(":oc_forma_pagamento", trim($this->oc_forma_pagamento ?? ""));
+        $stmt->bindValue(":oc_aprovacao",       trim($this->oc_aprovacao       ?? ""));
+        $stmt->bindValue(":oc_data_referencia", trim($this->oc_data_referencia ?? ""));
+        $stmt->bindValue(":oc_centro_de_custo", trim($this->oc_centro_de_custo ?? ""));
+        $stmt->bindValue(":oc_solicitante",     trim($this->oc_solicitante     ?? ""));
 
         return $stmt->execute();
     }
 
     // ---------------------------------------------------------
     // Atualiza os dados de uma OC existente pelo ID
-    // Retorna false se a OC não existir (rowCount = 0)
+    // rowCount() = 0 não é erro — pode ser sem alterações.
+    // A verificação de existência é feita no endpoint (oc.php).
     // ---------------------------------------------------------
     public function atualizar() {
         $query = "UPDATE {$this->table} SET
@@ -111,21 +113,19 @@ class OC {
 
         $stmt = $this->conn->prepare($query);
 
-        $stmt->bindValue(":oc_numero",           strip_tags($this->oc_numero));
-        $stmt->bindValue(":oc_descricao",        strip_tags($this->oc_descricao));
-        $stmt->bindValue(":oc_nome_fornecedor",  strip_tags($this->oc_nome_fornecedor));
-        $stmt->bindValue(":oc_valor",            floatval($this->oc_valor), PDO::PARAM_STR);
-        $stmt->bindValue(":oc_status",           strip_tags($this->oc_status));
-        $stmt->bindValue(":oc_forma_pagamento",  strip_tags($this->oc_forma_pagamento));
-        $stmt->bindValue(":oc_aprovacao",        strip_tags($this->oc_aprovacao));
-        $stmt->bindValue(":oc_data_referencia",  strip_tags($this->oc_data_referencia));
-        $stmt->bindValue(":oc_centro_de_custo",  strip_tags($this->oc_centro_de_custo));
-        $stmt->bindValue(":oc_solicitante",      strip_tags($this->oc_solicitante));
-        $stmt->bindValue(":id",                  intval($this->id), PDO::PARAM_INT);
+        $stmt->bindValue(":oc_numero",          trim($this->oc_numero          ?? ""));
+        $stmt->bindValue(":oc_descricao",       trim($this->oc_descricao       ?? ""));
+        $stmt->bindValue(":oc_nome_fornecedor", trim($this->oc_nome_fornecedor ?? ""));
+        $stmt->bindValue(":oc_valor",           floatval($this->oc_valor), PDO::PARAM_STR);
+        $stmt->bindValue(":oc_status",          trim($this->oc_status          ?? ""));
+        $stmt->bindValue(":oc_forma_pagamento", trim($this->oc_forma_pagamento ?? ""));
+        $stmt->bindValue(":oc_aprovacao",       trim($this->oc_aprovacao       ?? ""));
+        $stmt->bindValue(":oc_data_referencia", trim($this->oc_data_referencia ?? ""));
+        $stmt->bindValue(":oc_centro_de_custo", trim($this->oc_centro_de_custo ?? ""));
+        $stmt->bindValue(":oc_solicitante",     trim($this->oc_solicitante     ?? ""));
+        $stmt->bindValue(":id",                 intval($this->id), PDO::PARAM_INT);
 
-        $stmt->execute();
-        // Retorna true se pelo menos 1 linha foi afetada
-        return $stmt->rowCount() > 0;
+        return $stmt->execute();
     }
 
     // ---------------------------------------------------------

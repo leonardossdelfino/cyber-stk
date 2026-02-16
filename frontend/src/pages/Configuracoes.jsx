@@ -23,24 +23,25 @@ import ModalFornecedor from "../components/ModalFornecedor";
 // ── Tabelas que usam 'descricao' como campo principal
 const TABELAS_DESCRICAO = ["perifericos", "incidentes"];
 
+// ── Tabelas que usam cor — tratamento visual idêntico
+const TABELAS_COM_COR = ["status_oc", "status_aprovacao"];
+
 // ── Definição das abas
 const ABAS = [
-  { id: "fornecedores",     label: "Fornecedores",        icon: Users,         tipo: "modal"      },
-  { id: "categorias",       label: "Categorias",          icon: Tag,           tipo: "lista"      },
-  { id: "formas_pagamento", label: "Formas de Pagamento", icon: CreditCard,    tipo: "lista"      },
-  { id: "status_aprovacao", label: "Status de Aprovação", icon: CheckSquare,   tipo: "lista"      },
-  { id: "status_oc",        label: "Status da OC",        icon: ClipboardList, tipo: "cor"        },
+  { id: "fornecedores",     label: "Fornecedores",        icon: Users,         tipo: "modal" },
+  { id: "categorias",       label: "Categorias",          icon: Tag,           tipo: "lista" },
+  { id: "formas_pagamento", label: "Formas de Pagamento", icon: CreditCard,    tipo: "lista" },
+  { id: "status_aprovacao", label: "Status de Aprovação", icon: CheckSquare,   tipo: "cor"   }, // ← tipo cor
+  { id: "status_oc",        label: "Status da OC",        icon: ClipboardList, tipo: "cor"   },
   { id: "perifericos",      label: "Periféricos",         icon: Cpu,           tipo: "periferico" },
-  { id: "incidentes",       label: "Incidentes",          icon: AlertTriangle, tipo: "lista"      },
+  { id: "incidentes",       label: "Incidentes",          icon: AlertTriangle, tipo: "lista" },
 ];
 
-// ── Formulários iniciais por tipo
 const FORM_LISTA      = { nome: "" };
 const FORM_DESCRICAO  = { descricao: "" };
 const FORM_COR        = { nome: "", cor: "#ff0571" };
 const FORM_PERIFERICO = { descricao: "", marca: "", valor_medio: "", obs: "" };
 
-// ── Estilos base dos inputs
 const inputStyle = {
   background: "rgba(255,255,255,0.06)",
   border:     "1px solid rgba(255,255,255,0.1)",
@@ -48,7 +49,6 @@ const inputStyle = {
 const inputFocus = (e) => (e.target.style.borderColor = "rgba(255,5,113,0.5)");
 const inputBlur  = (e) => (e.target.style.borderColor = "rgba(255,255,255,0.1)");
 
-// ── Retorna o campo principal de uma aba
 const campoPrincipal = (abaId) =>
   TABELAS_DESCRICAO.includes(abaId) ? "descricao" : "nome";
 
@@ -56,25 +56,23 @@ const campoPrincipal = (abaId) =>
 // COMPONENTE PRINCIPAL
 // =============================================
 function Configuracoes() {
-  const [searchParams]  = useSearchParams();
-  const abaParam        = searchParams.get("aba") ?? "fornecedores";
-  const abaAtiva        = ABAS.find((a) => a.id === abaParam)?.id ?? "fornecedores";
-  const abaInfo         = ABAS.find((a) => a.id === abaAtiva);
+  const [searchParams] = useSearchParams();
+  const abaParam       = searchParams.get("aba") ?? "fornecedores";
+  const abaAtiva       = ABAS.find((a) => a.id === abaParam)?.id ?? "fornecedores";
+  const abaInfo        = ABAS.find((a) => a.id === abaAtiva);
 
-  const [itens,         setItens]         = useState([]);
-  const [carregando,    setCarregando]     = useState(false);
-  const [editandoId,    setEditandoId]     = useState(null);
-  const [formEdicao,    setFormEdicao]     = useState({});
-  const [novoForm,      setNovoForm]       = useState({});
-  const [adicionando,   setAdicionando]    = useState(false);
-  const [salvando,      setSalvando]       = useState(false);
-  const [erro,          setErro]           = useState("");
+  const [itens,       setItens]       = useState([]);
+  const [carregando,  setCarregando]  = useState(false);
+  const [editandoId,  setEditandoId]  = useState(null);
+  const [formEdicao,  setFormEdicao]  = useState({});
+  const [novoForm,    setNovoForm]    = useState({});
+  const [adicionando, setAdicionando] = useState(false);
+  const [salvando,    setSalvando]    = useState(false);
+  const [erro,        setErro]        = useState("");
 
-  // Modal Fornecedor
   const [modalFornAberto, setModalFornAberto] = useState(false);
-  const [fornEdicao,      setFornEdicao]       = useState(null);
+  const [fornEdicao,      setFornEdicao]      = useState(null);
 
-  // ── Formulário inicial por tipo
   function formInicial(tipo) {
     if (tipo === "cor")        return { ...FORM_COR };
     if (tipo === "periferico") return { ...FORM_PERIFERICO };
@@ -82,7 +80,6 @@ function Configuracoes() {
     return { ...FORM_LISTA };
   }
 
-  // ── Carrega os itens da aba ativa
   const carregar = useCallback(async () => {
     setCarregando(true);
     setErro("");
@@ -106,7 +103,6 @@ function Configuracoes() {
     setNovoForm(formInicial(abaInfo?.tipo));
   }, [carregar]);
 
-  // ── Edição inline
   const iniciarEdicao  = (item) => { setEditandoId(item.id); setFormEdicao({ ...item }); };
   const cancelarEdicao = ()     => { setEditandoId(null); setFormEdicao({}); };
 
@@ -122,7 +118,6 @@ function Configuracoes() {
     }
   };
 
-  // ── Adicionar novo
   const salvarNovo = async () => {
     const campo = campoPrincipal(abaAtiva);
     if (!novoForm[campo]?.trim()) {
@@ -142,7 +137,6 @@ function Configuracoes() {
     }
   };
 
-  // ── Deletar
   const deletar = async (id) => {
     if (!confirm("Deseja remover este item?")) return;
     try {
@@ -176,16 +170,21 @@ function Configuracoes() {
         </div>
       );
     }
-    if (abaAtiva === "status_oc") {
+
+    // Status OC e Status Aprovação — mesmo visual com bolinha colorida
+    if (TABELAS_COM_COR.includes(abaAtiva)) {
       return (
         <div className="flex items-center gap-3">
-          <span className="w-3 h-3 rounded-full flex-shrink-0"
-            style={{ background: item.cor ?? "#555" }} />
+          <span
+            className="w-3 h-3 rounded-full flex-shrink-0"
+            style={{ background: item.cor ?? "#555" }}
+          />
           <span className="text-sm text-white">{item.nome}</span>
           <span className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>{item.cor}</span>
         </div>
       );
     }
+
     if (abaAtiva === "perifericos") {
       return (
         <div className="flex flex-col min-w-0">
@@ -197,7 +196,7 @@ function Configuracoes() {
         </div>
       );
     }
-    // Genérico — suporta 'nome' e 'descricao'
+
     return (
       <span className="text-sm text-white">
         {item.descricao ?? item.nome}
@@ -209,7 +208,8 @@ function Configuracoes() {
   // RENDER — Campos de edição inline
   // =============================================
   const renderCamposEdicao = () => {
-    if (abaAtiva === "status_oc") {
+    // Status OC e Status Aprovação — mesmo formulário com nome + color picker
+    if (TABELAS_COM_COR.includes(abaAtiva)) {
       return (
         <div className="flex items-center gap-3 flex-1">
           <input
@@ -228,6 +228,7 @@ function Configuracoes() {
         </div>
       );
     }
+
     if (abaAtiva === "perifericos") {
       return (
         <div className="flex items-center gap-2 flex-1 flex-wrap">
@@ -256,7 +257,7 @@ function Configuracoes() {
         </div>
       );
     }
-    // Genérico — suporta 'nome' e 'descricao'
+
     const campo = campoPrincipal(abaAtiva);
     return (
       <input
@@ -347,8 +348,8 @@ function Configuracoes() {
           border:     "1px solid rgba(194,255,5,0.15)",
         }}
       >
-        {/* Status OC — nome + color picker */}
-        {abaAtiva === "status_oc" && (
+        {/* Status OC e Status Aprovação — nome + color picker */}
+        {TABELAS_COM_COR.includes(abaAtiva) && (
           <div className="flex items-center gap-3 flex-1">
             <input
               placeholder="Nome do status"
@@ -367,7 +368,7 @@ function Configuracoes() {
           </div>
         )}
 
-        {/* Periféricos — descricao + marca + valor */}
+        {/* Periféricos */}
         {abaAtiva === "perifericos" && (
           <div className="flex items-center gap-2 flex-1 flex-wrap">
             <input
@@ -396,7 +397,7 @@ function Configuracoes() {
         )}
 
         {/* Genérico — nome ou descricao */}
-        {abaAtiva !== "status_oc" && abaAtiva !== "perifericos" && (() => {
+        {!TABELAS_COM_COR.includes(abaAtiva) && abaAtiva !== "perifericos" && (() => {
           const campo = campoPrincipal(abaAtiva);
           return (
             <input

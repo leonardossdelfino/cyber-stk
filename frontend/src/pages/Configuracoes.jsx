@@ -8,7 +8,7 @@ import { useSearchParams } from "react-router-dom";
 import {
   Plus, Pencil, Trash2, Loader2,
   Save, X, Users, Tag, CreditCard,
-  CheckSquare, ClipboardList, Cpu, AlertTriangle,
+  CheckSquare, ClipboardList, Cpu, AlertTriangle, Zap,
 } from "lucide-react";
 import {
   listarConfiguracao,
@@ -28,13 +28,14 @@ const TABELAS_COM_COR = ["status_oc", "status_aprovacao"];
 
 // ── Definição das abas
 const ABAS = [
-  { id: "fornecedores",     label: "Fornecedores",        icon: Users,         tipo: "modal" },
-  { id: "categorias",       label: "Categorias",          icon: Tag,           tipo: "lista" },
-  { id: "formas_pagamento", label: "Formas de Pagamento", icon: CreditCard,    tipo: "lista" },
-  { id: "status_aprovacao", label: "Status de Aprovação", icon: CheckSquare,   tipo: "cor"   }, // ← tipo cor
-  { id: "status_oc",        label: "Status da OC",        icon: ClipboardList, tipo: "cor"   },
-  { id: "perifericos",      label: "Periféricos",         icon: Cpu,           tipo: "periferico" },
-  { id: "incidentes",       label: "Incidentes",          icon: AlertTriangle, tipo: "lista" },
+  { id: "fornecedores",     label: "Fornecedores",          icon: Users,         tipo: "modal"      },
+  { id: "categorias",       label: "Categorias",            icon: Tag,           tipo: "lista"      },
+  { id: "formas_pagamento", label: "Formas de Pagamento",   icon: CreditCard,    tipo: "lista"      },
+  { id: "status_aprovacao", label: "Status de Aprovação",   icon: CheckSquare,   tipo: "cor"        },
+  { id: "status_oc",        label: "Status da OC",          icon: ClipboardList, tipo: "cor"        },
+  { id: "perifericos",      label: "Periféricos",           icon: Cpu,           tipo: "periferico" },
+  { id: "incidentes",       label: "Incidentes",            icon: AlertTriangle, tipo: "lista"      },
+  { id: "acoes_incidente",  label: "Ações de Incidente",    icon: Zap,           tipo: "lista"      },
 ];
 
 const FORM_LISTA      = { nome: "" };
@@ -171,7 +172,6 @@ function Configuracoes() {
       );
     }
 
-    // Status OC e Status Aprovação — mesmo visual com bolinha colorida
     if (TABELAS_COM_COR.includes(abaAtiva)) {
       return (
         <div className="flex items-center gap-3">
@@ -208,7 +208,6 @@ function Configuracoes() {
   // RENDER — Campos de edição inline
   // =============================================
   const renderCamposEdicao = () => {
-    // Status OC e Status Aprovação — mesmo formulário com nome + color picker
     if (TABELAS_COM_COR.includes(abaAtiva)) {
       return (
         <div className="flex items-center gap-3 flex-1">
@@ -348,7 +347,6 @@ function Configuracoes() {
           border:     "1px solid rgba(194,255,5,0.15)",
         }}
       >
-        {/* Status OC e Status Aprovação — nome + color picker */}
         {TABELAS_COM_COR.includes(abaAtiva) && (
           <div className="flex items-center gap-3 flex-1">
             <input
@@ -368,7 +366,6 @@ function Configuracoes() {
           </div>
         )}
 
-        {/* Periféricos */}
         {abaAtiva === "perifericos" && (
           <div className="flex items-center gap-2 flex-1 flex-wrap">
             <input
@@ -396,7 +393,6 @@ function Configuracoes() {
           </div>
         )}
 
-        {/* Genérico — nome ou descricao */}
         {!TABELAS_COM_COR.includes(abaAtiva) && abaAtiva !== "perifericos" && (() => {
           const campo = campoPrincipal(abaAtiva);
           return (

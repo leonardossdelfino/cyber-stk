@@ -11,6 +11,7 @@
 //   status_oc        → nome + cor
 //   perifericos      → descricao + marca + valor_medio + obs
 //   incidentes       → descricao
+//   acoes_incidente  → nome
 // =============================================
 
 class ConfiguracaoSimples {
@@ -25,6 +26,7 @@ class ConfiguracaoSimples {
         'status_oc'        => ['campo_principal' => 'nome',         'extras' => ['cor']],
         'perifericos'      => ['campo_principal' => 'descricao',    'extras' => ['marca', 'valor_medio', 'obs']],
         'incidentes'       => ['campo_principal' => 'descricao',    'extras' => []],
+        'acoes_incidente'  => ['campo_principal' => 'nome',         'extras' => []],
     ];
 
     public function __construct($db, $tabela) {

@@ -2,25 +2,25 @@
 // ARQUIVO: src/components/Layout.jsx
 // FUNÇÃO: Menu lateral + área de conteúdo principal
 // =============================================
-
 import { useState } from "react";
 import { Outlet, NavLink, useNavigate, useSearchParams } from "react-router-dom";
 import {
   LayoutDashboard, ShoppingCart, Settings,
   ChevronDown, ChevronUp, Users, Tag, CreditCard,
-  CheckSquare, ClipboardList, Cpu, AlertTriangle, Receipt,
+  CheckSquare, ClipboardList, Cpu, AlertTriangle,
+  Receipt, FileText, ShieldCheck,
 } from "lucide-react";
 import { VERSAO } from "../config/versao";
 
 // Itens do submenu de configurações
 const ITENS_CONFIG = [
-  { aba: "fornecedores",     icon: Users,         label: "Fornecedores"       },
-  { aba: "categorias",       icon: Tag,           label: "Categorias"         },
-  { aba: "formas_pagamento", icon: CreditCard,    label: "Formas de Pagamento"},
-  { aba: "status_aprovacao", icon: CheckSquare,   label: "Status de Aprovação"},
-  { aba: "status_oc",        icon: ClipboardList, label: "Status da OC"       },
-  { aba: "perifericos",      icon: Cpu,           label: "Periféricos"        },
-  { aba: "incidentes",       icon: AlertTriangle, label: "Incidentes"         },
+  { aba: "fornecedores",     icon: Users,         label: "Fornecedores"        },
+  { aba: "categorias",       icon: Tag,           label: "Categorias"          },
+  { aba: "formas_pagamento", icon: CreditCard,    label: "Formas de Pagamento" },
+  { aba: "status_aprovacao", icon: CheckSquare,   label: "Status de Aprovação" },
+  { aba: "status_oc",        icon: ClipboardList, label: "Status da OC"        },
+  { aba: "perifericos",      icon: Cpu,           label: "Periféricos"         },
+  { aba: "incidentes",       icon: AlertTriangle, label: "Incidentes"          },
 ];
 
 // Estilo de item de navegação ativo/inativo
@@ -115,13 +115,26 @@ function Layout() {
             )}
           </NavLink>
 
+          {/* Serviços Contratados */}
           <NavLink to="/servicos-contratados"
             className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200"
             style={({ isActive }) => estiloNavItem(isActive)}>
             {({ isActive }) => (
               <>
-                <Receipt size={18} style={{ color: isActive ? "#ff0571" : "rgba(255,255,255,0.35)" }} />
+                <FileText size={18} style={{ color: isActive ? "#ff0571" : "rgba(255,255,255,0.35)" }} />
                 Serviços Contratados
+              </>
+            )}
+          </NavLink>
+
+          {/* Certificados Digitais */}
+          <NavLink to="/certificados-digitais"
+            className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200"
+            style={({ isActive }) => estiloNavItem(isActive)}>
+            {({ isActive }) => (
+              <>
+                <ShieldCheck size={18} style={{ color: isActive ? "#ff0571" : "rgba(255,255,255,0.35)" }} />
+                Certificados Digitais
               </>
             )}
           </NavLink>
@@ -148,15 +161,16 @@ function Layout() {
                 {ITENS_CONFIG.map(({ aba, icon: Icon, label }) => {
                   const ativo = searchParams.get("aba") === aba;
                   return (
-                    <button key={aba} onClick={() => navigate(`/configuracoes?aba=${aba}`)}
+                    <button key={aba}
+                      onClick={() => navigate(`/configuracoes?aba=${aba}`)}
                       className="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-xs font-medium transition-all duration-200"
                       style={{
                         color:      ativo ? "#ffa300" : "rgba(255,255,255,0.4)",
                         background: ativo ? "rgba(255,163,0,0.10)" : "transparent",
                         border:     ativo ? "1px solid rgba(255,163,0,0.20)" : "1px solid transparent",
                       }}
-                      onMouseEnter={(e) => { if (!ativo) { e.currentTarget.style.color = "#ffa300"; e.currentTarget.style.background = "rgba(255,163,0,0.06)"; }}}
-                      onMouseLeave={(e) => { if (!ativo) { e.currentTarget.style.color = "rgba(255,255,255,0.4)"; e.currentTarget.style.background = "transparent"; }}}
+                      onMouseEnter={e => { if (!ativo) { e.currentTarget.style.color = "#ffa300"; e.currentTarget.style.background = "rgba(255,163,0,0.06)"; }}}
+                      onMouseLeave={e => { if (!ativo) { e.currentTarget.style.color = "rgba(255,255,255,0.4)"; e.currentTarget.style.background = "transparent"; }}}
                     >
                       <Icon size={14} />
                       {label}
@@ -166,7 +180,6 @@ function Layout() {
               </div>
             )}
           </div>
-
         </nav>
 
         {/* Rodapé */}
@@ -175,14 +188,12 @@ function Layout() {
             v{VERSAO}
           </p>
         </div>
-
       </aside>
 
       {/* ===== CONTEÚDO ===== */}
       <main className="flex-1 overflow-auto" style={{ background: "#111111" }}>
         <Outlet />
       </main>
-
     </div>
   );
 }

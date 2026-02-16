@@ -115,6 +115,17 @@ function Layout() {
             )}
           </NavLink>
 
+          <NavLink to="/servicos-contratados"
+            className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200"
+            style={({ isActive }) => estiloNavItem(isActive)}>
+            {({ isActive }) => (
+              <>
+                <Receipt size={18} style={{ color: isActive ? "#ff0571" : "rgba(255,255,255,0.35)" }} />
+                Serviços Contratados
+              </>
+            )}
+          </NavLink>
+
           {/* Configurações — dropdown */}
           <div>
             <button onClick={() => setConfigAberto(!configAberto)}

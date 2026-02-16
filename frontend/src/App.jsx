@@ -9,6 +9,7 @@ import Dashboard     from "./pages/Dashboard";
 import ListagemOCs   from "./pages/ListagemOCs";
 import Configuracoes from "./pages/Configuracoes";
 import ContasFixas   from "./pages/ContasFixas";
+import ServicosContratados from './pages/ServicosContratados';
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
           <Route path="ordens"        element={<ListagemOCs />} />
           <Route path="configuracoes" element={<Configuracoes />} />
           <Route path="contas-fixas"  element={<ContasFixas />} />
+          <Route path="/servicos-contratados" element={<ServicosContratados />} />
         </Route>
       </Routes>
     </BrowserRouter>

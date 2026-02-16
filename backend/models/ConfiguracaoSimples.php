@@ -5,6 +5,7 @@
 //
 // Tabelas e seus campos principais:
 //   categorias       → nome
+//   fornecedores     → razao_social
 //   formas_pagamento → nome
 //   status_aprovacao → nome + cor
 //   status_oc        → nome + cor
@@ -17,12 +18,13 @@ class ConfiguracaoSimples {
     private $tabela;
 
     private static $config = [
-        'categorias'       => ['campo_principal' => 'nome',      'extras' => []],
-        'formas_pagamento' => ['campo_principal' => 'nome',      'extras' => []],
-        'status_aprovacao' => ['campo_principal' => 'nome',      'extras' => ['cor']], // ← cor adicionada
-        'status_oc'        => ['campo_principal' => 'nome',      'extras' => ['cor']],
-        'perifericos'      => ['campo_principal' => 'descricao', 'extras' => ['marca', 'valor_medio', 'obs']],
-        'incidentes'       => ['campo_principal' => 'descricao', 'extras' => []],
+        'categorias'       => ['campo_principal' => 'nome',         'extras' => []],
+        'fornecedores'     => ['campo_principal' => 'razao_social',  'extras' => ['cnpj', 'contato', 'email', 'descricao']],
+        'formas_pagamento' => ['campo_principal' => 'nome',         'extras' => []],
+        'status_aprovacao' => ['campo_principal' => 'nome',         'extras' => ['cor']],
+        'status_oc'        => ['campo_principal' => 'nome',         'extras' => ['cor']],
+        'perifericos'      => ['campo_principal' => 'descricao',    'extras' => ['marca', 'valor_medio', 'obs']],
+        'incidentes'       => ['campo_principal' => 'descricao',    'extras' => []],
     ];
 
     public function __construct($db, $tabela) {
@@ -30,19 +32,19 @@ class ConfiguracaoSimples {
         $this->tabela = $tabela;
     }
 
-    public static function tabelaPermitida($tabela) {
+    public static function tabelaPermitida($tabela): bool {
         return array_key_exists($tabela, self::$config);
     }
 
-    private function campoPrincipal() {
+    private function campoPrincipal(): string {
         return self::$config[$this->tabela]['campo_principal'];
     }
 
-    private function camposExtras() {
+    private function camposExtras(): array {
         return self::$config[$this->tabela]['extras'];
     }
 
-    public function listar() {
+    public function listar(): array {
         $campo = $this->campoPrincipal();
         $query = "SELECT * FROM {$this->tabela} ORDER BY {$campo} ASC";
         $stmt  = $this->conn->prepare($query);
@@ -50,7 +52,7 @@ class ConfiguracaoSimples {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function buscarPorId($id) {
+    public function buscarPorId(int $id): array|false {
         $query = "SELECT * FROM {$this->tabela} WHERE id = :id LIMIT 1";
         $stmt  = $this->conn->prepare($query);
         $stmt->bindValue(':id', $id, PDO::PARAM_INT);
@@ -58,7 +60,7 @@ class ConfiguracaoSimples {
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    public function criar($dados) {
+    public function criar(array $dados): bool {
         $campo  = $this->campoPrincipal();
         $extras = $this->camposExtras();
 
@@ -87,7 +89,7 @@ class ConfiguracaoSimples {
         return $stmt->execute();
     }
 
-    public function atualizar($id, $dados) {
+    public function atualizar(int $id, array $dados): bool {
         $campo  = $this->campoPrincipal();
         $extras = $this->camposExtras();
 
@@ -113,7 +115,7 @@ class ConfiguracaoSimples {
         return $stmt->execute();
     }
 
-    public function deletar($id) {
+    public function deletar(int $id): bool {
         $query = "DELETE FROM {$this->tabela} WHERE id = :id";
         $stmt  = $this->conn->prepare($query);
         $stmt->bindValue(':id', $id, PDO::PARAM_INT);

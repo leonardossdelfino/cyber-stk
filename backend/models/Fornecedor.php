@@ -27,21 +27,20 @@ class Fornecedor {
     public function buscarPorId($id) {
         $query = "SELECT * FROM {$this->tabela} WHERE id = :id LIMIT 1";
         $stmt  = $this->conn->prepare($query);
-        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
         $stmt->execute();
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
     // Buscar por nome (para autocomplete no campo fornecedor da OC)
     public function buscarPorNome($termo) {
-        $termo = "%{$termo}%";
         $query = "SELECT id, razao_social, cnpj, contato, email
                   FROM {$this->tabela}
                   WHERE razao_social LIKE :termo
                   ORDER BY razao_social ASC
                   LIMIT 10";
         $stmt  = $this->conn->prepare($query);
-        $stmt->bindParam(':termo', $termo);
+        $stmt->bindValue(':termo', "%{$termo}%");
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -55,17 +54,11 @@ class Fornecedor {
 
         $stmt = $this->conn->prepare($query);
 
-        $razao_social = $dados['razao_social'];
-        $cnpj         = $dados['cnpj']      ?? null;
-        $contato      = $dados['contato']   ?? null;
-        $email        = $dados['email']     ?? null;
-        $descricao    = $dados['descricao'] ?? null;
-
-        $stmt->bindParam(':razao_social', $razao_social);
-        $stmt->bindParam(':cnpj',         $cnpj);
-        $stmt->bindParam(':contato',      $contato);
-        $stmt->bindParam(':email',        $email);
-        $stmt->bindParam(':descricao',    $descricao);
+        $stmt->bindValue(':razao_social', $dados['razao_social']);
+        $stmt->bindValue(':cnpj',         $dados['cnpj']      ?? null);
+        $stmt->bindValue(':contato',      $dados['contato']   ?? null);
+        $stmt->bindValue(':email',        $dados['email']     ?? null);
+        $stmt->bindValue(':descricao',    $dados['descricao'] ?? null);
 
         return $stmt->execute();
     }
@@ -82,18 +75,12 @@ class Fornecedor {
 
         $stmt = $this->conn->prepare($query);
 
-        $razao_social = $dados['razao_social'];
-        $cnpj         = $dados['cnpj']      ?? null;
-        $contato      = $dados['contato']   ?? null;
-        $email        = $dados['email']     ?? null;
-        $descricao    = $dados['descricao'] ?? null;
-
-        $stmt->bindParam(':id',           $id,           PDO::PARAM_INT);
-        $stmt->bindParam(':razao_social', $razao_social);
-        $stmt->bindParam(':cnpj',         $cnpj);
-        $stmt->bindParam(':contato',      $contato);
-        $stmt->bindParam(':email',        $email);
-        $stmt->bindParam(':descricao',    $descricao);
+        $stmt->bindValue(':id',           $id,                        PDO::PARAM_INT);
+        $stmt->bindValue(':razao_social', $dados['razao_social']);
+        $stmt->bindValue(':cnpj',         $dados['cnpj']      ?? null);
+        $stmt->bindValue(':contato',      $dados['contato']   ?? null);
+        $stmt->bindValue(':email',        $dados['email']     ?? null);
+        $stmt->bindValue(':descricao',    $dados['descricao'] ?? null);
 
         return $stmt->execute();
     }
@@ -102,7 +89,7 @@ class Fornecedor {
     public function deletar($id) {
         $query = "DELETE FROM {$this->tabela} WHERE id = :id";
         $stmt  = $this->conn->prepare($query);
-        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
         return $stmt->execute();
     }
 }

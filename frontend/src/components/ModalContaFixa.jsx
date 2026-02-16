@@ -1,66 +1,51 @@
 // =============================================
 // ARQUIVO: src/components/ModalContaFixa.jsx
-// FUNÇÃO: Modal de criação e edição de Conta Fixa
-// Efeito glassmorphism — mesmo padrão do ModalOC
-// Opções de forma de pagamento vindas do banco
 // =============================================
 
 import { useState, useEffect } from "react";
 import { X, Save, Loader2 } from "lucide-react";
 import {
-  buscarContaFixa,
-  criarContaFixa,
-  atualizarContaFixa,
-  listarConfiguracao,
+  buscarContaFixa, criarContaFixa,
+  atualizarContaFixa, listarConfiguracao,
 } from "../services/api";
 import InputFornecedor from "./InputFornecedor";
 import Campo from "./CampoFormulario";
 import { estiloInput, aoFocar, aoDesfocar } from "../styles/inputStyles";
+import {
+  estiloOverlay, estiloModal, estiloHeader, estiloFooter,
+  estiloBtnFechar, estiloBtnFecharHover,
+  estiloBtnCancelar, estiloBtnSalvar, estiloErro,
+} from "../styles/modalStyles";
 
-// Status são estruturais do sistema — não precisam vir do banco
 const STATUS_OPCOES = ["Ativa", "Inativa", "Cancelada"];
 
-// ─────────────────────────────────────────────
-// MODAL PRINCIPAL
-// ─────────────────────────────────────────────
 function ModalContaFixa({ contaId, onFechar, onSalvo }) {
   const [form, setForm] = useState({
-    nome:            "",
-    fornecedor:      "",
-    valor:           "",
-    dia_vencimento:  "",
-    dia_fechamento:  "",
-    forma_pagamento: "",
-    categoria:       "",
-    status:          "Ativa",
-    observacoes:     "",
+    nome: "", fornecedor: "", valor: "", dia_vencimento: "",
+    dia_fechamento: "", forma_pagamento: "", categoria: "",
+    status: "Ativa", observacoes: "",
   });
-  const [categorias, setCategorias]           = useState([]);
+  const [categorias,     setCategorias]     = useState([]);
   const [formasPagamento, setFormasPagamento] = useState([]);
-  const [salvando, setSalvando]               = useState(false);
-  const [carregando, setCarregando]           = useState(false);
-  const [erro, setErro]                       = useState("");
+  const [salvando,       setSalvando]       = useState(false);
+  const [carregando,     setCarregando]     = useState(false);
+  const [erro,           setErro]           = useState("");
 
-  // Bloqueia scroll da página
   useEffect(() => {
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = ""; };
   }, []);
 
-  // Carrega opções e dados da conta se for edição
   useEffect(() => {
     const carregar = async () => {
       try {
         setCarregando(true);
-
         const [cats, formas] = await Promise.all([
           listarConfiguracao("categorias"),
           listarConfiguracao("formas_pagamento"),
         ]);
-
         setCategorias(cats);
         setFormasPagamento(formas);
-
         if (contaId) {
           const conta = await buscarContaFixa(contaId);
           setForm({
@@ -75,7 +60,6 @@ function ModalContaFixa({ contaId, onFechar, onSalvo }) {
             observacoes:     conta.observacoes ?? "",
           });
         } else {
-          // Pré-seleciona o primeiro item de cada lista
           setForm((prev) => ({
             ...prev,
             categoria:       cats.length  > 0 ? cats[0].nome   : "",
@@ -99,21 +83,15 @@ function ModalContaFixa({ contaId, onFechar, onSalvo }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErro("");
-
     if (!form.nome.trim())                        return setErro("Nome é obrigatório.");
     if (!form.fornecedor.trim())                  return setErro("Fornecedor é obrigatório.");
     if (!form.valor || isNaN(Number(form.valor))) return setErro("Valor inválido.");
     if (!form.dia_vencimento)                     return setErro("Dia de vencimento é obrigatório.");
     if (!form.categoria)                          return setErro("Categoria é obrigatória.");
     if (!form.forma_pagamento)                    return setErro("Forma de pagamento é obrigatória.");
-
     try {
       setSalvando(true);
-      if (contaId) {
-        await atualizarContaFixa(contaId, form);
-      } else {
-        await criarContaFixa(form);
-      }
+      contaId ? await atualizarContaFixa(contaId, form) : await criarContaFixa(form);
       onSalvo();
     } catch {
       setErro("Erro ao salvar. Tente novamente.");
@@ -122,52 +100,12 @@ function ModalContaFixa({ contaId, onFechar, onSalvo }) {
     }
   };
 
-  const handleOverlayClick = (e) => {
-    if (e.target === e.currentTarget) onFechar();
-  };
-
   return (
-    <div
-      onClick={handleOverlayClick}
-      style={{
-        position:             "fixed",
-        inset:                0,
-        zIndex:               50,
-        display:              "flex",
-        alignItems:           "center",
-        justifyContent:       "center",
-        padding:              "16px",
-        backgroundColor:      "rgba(0, 0, 0, 0.70)",
-        backdropFilter:       "blur(6px)",
-        WebkitBackdropFilter: "blur(6px)",
-      }}
-    >
-      <div
-        style={{
-          width:                "100%",
-          maxWidth:             "640px",
-          maxHeight:            "90vh",
-          overflowY:            "auto",
-          borderRadius:         "16px",
-          background:           "rgba(17, 17, 17, 0.80)",
-          backdropFilter:       "blur(40px)",
-          WebkitBackdropFilter: "blur(40px)",
-          border:               "1px solid rgba(255, 5, 113, 0.30)",
-          boxShadow: `
-            0 0 0 1px rgba(255, 5, 113, 0.08),
-            0 0 24px rgba(255, 5, 113, 0.10),
-            0 0 60px rgba(255, 5, 113, 0.05),
-            0 32px 64px rgba(0, 0, 0, 0.80)
-          `,
-          outline: "1px solid rgba(255, 255, 255, 0.04)",
-        }}
-      >
+    <div onClick={(e) => e.target === e.currentTarget && onFechar()} style={estiloOverlay}>
+      <div style={estiloModal("640px")}>
 
         {/* Cabeçalho */}
-        <div
-          className="flex items-center justify-between px-6 py-5"
-          style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.06)" }}
-        >
+        <div className="flex items-center justify-between px-6 py-5" style={estiloHeader}>
           <div>
             <h2 className="text-base font-semibold text-white">
               {contaId ? "Editar Conta Fixa" : "Nova Conta Fixa"}
@@ -176,26 +114,11 @@ function ModalContaFixa({ contaId, onFechar, onSalvo }) {
               Preencha os dados da conta recorrente
             </p>
           </div>
-          <button
-            type="button"
-            onClick={onFechar}
+          <button onClick={onFechar}
             className="flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-150"
-            style={{
-              background: "rgba(255,255,255,0.05)",
-              border:     "1px solid rgba(255,255,255,0.08)",
-              color:      "rgba(255,255,255,0.5)",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background  = "rgba(255, 5, 113, 0.12)";
-              e.currentTarget.style.borderColor = "rgba(255, 5, 113, 0.30)";
-              e.currentTarget.style.color       = "#ff0571";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background  = "rgba(255,255,255,0.05)";
-              e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)";
-              e.currentTarget.style.color       = "rgba(255,255,255,0.5)";
-            }}
-          >
+            style={estiloBtnFechar}
+            onMouseEnter={(e) => Object.assign(e.currentTarget.style, estiloBtnFecharHover)}
+            onMouseLeave={(e) => Object.assign(e.currentTarget.style, estiloBtnFechar)}>
             <X size={16} />
           </button>
         </div>
@@ -204,227 +127,103 @@ function ModalContaFixa({ contaId, onFechar, onSalvo }) {
         {carregando ? (
           <div className="flex items-center justify-center py-20 gap-3">
             <Loader2 size={20} style={{ color: "#ff0571" }} className="animate-spin" />
-            <span className="text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>
-              Carregando...
-            </span>
+            <span className="text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>Carregando...</span>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="p-6">
 
-            {erro && (
-              <div
-                className="mb-5 px-4 py-3 rounded-lg text-sm"
-                style={{
-                  background: "rgba(255, 5, 113, 0.10)",
-                  border:     "1px solid rgba(255, 5, 113, 0.25)",
-                  color:      "#ff6ba8",
-                }}
-              >
-                {erro}
-              </div>
-            )}
+            {erro && <div className="mb-5 px-4 py-3 rounded-lg text-sm" style={estiloErro}>{erro}</div>}
 
-            {/* Seção 1 — Identificação */}
-            <p
-              className="text-xs font-semibold uppercase tracking-widest mb-4"
-              style={{ color: "#ff0571" }}
-            >
+            {/* Seção 1 */}
+            <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: "#ff0571" }}>
               Identificação
             </p>
-
             <div className="grid grid-cols-2 gap-4 mb-6">
               <Campo label="Nome da Conta" obrigatorio>
-                <input
-                  name="nome"
-                  value={form.nome}
-                  onChange={handleChange}
-                  placeholder="Ex: Internet Vivo"
-                  style={estiloInput}
-                  onFocus={aoFocar}
-                  onBlur={aoDesfocar}
-                />
+                <input name="nome" value={form.nome} onChange={handleChange}
+                  placeholder="Ex: Internet Vivo" style={estiloInput}
+                  onFocus={aoFocar} onBlur={aoDesfocar} />
               </Campo>
-
               <Campo label="Fornecedor" obrigatorio>
                 <InputFornecedor
                   value={form.fornecedor}
                   onChange={(val) => setForm((prev) => ({ ...prev, fornecedor: val }))}
                 />
               </Campo>
-
               <Campo label="Categoria" obrigatorio>
-                <select
-                  name="categoria"
-                  value={form.categoria}
-                  onChange={handleChange}
-                  style={{ ...estiloInput, cursor: "pointer" }}
-                  onFocus={aoFocar}
-                  onBlur={aoDesfocar}
-                >
+                <select name="categoria" value={form.categoria} onChange={handleChange}
+                  style={{ ...estiloInput, cursor: "pointer" }} onFocus={aoFocar} onBlur={aoDesfocar}>
                   {categorias.map((cat) => (
-                    <option key={cat.id} value={cat.nome} style={{ background: "#1a1a1a" }}>
-                      {cat.nome}
-                    </option>
+                    <option key={cat.id} value={cat.nome} style={{ background: "#141414" }}>{cat.nome}</option>
                   ))}
                 </select>
               </Campo>
-
               <Campo label="Valor Mensal (R$)" obrigatorio>
-                <input
-                  name="valor"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={form.valor}
-                  onChange={handleChange}
-                  placeholder="0.00"
-                  style={estiloInput}
-                  onFocus={aoFocar}
-                  onBlur={aoDesfocar}
-                />
+                <input name="valor" type="number" step="0.01" min="0"
+                  value={form.valor} onChange={handleChange} placeholder="0.00"
+                  style={estiloInput} onFocus={aoFocar} onBlur={aoDesfocar} />
               </Campo>
             </div>
 
-            {/* Seção 2 — Datas e Pagamento */}
-            <p
-              className="text-xs font-semibold uppercase tracking-widest mb-4"
-              style={{ color: "#ffa300" }}
-            >
+            {/* Seção 2 */}
+            <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: "#ffa300" }}>
               Datas e Pagamento
             </p>
-
             <div className="grid grid-cols-2 gap-4 mb-6">
               <Campo label="Dia de Vencimento" obrigatorio>
-                <input
-                  name="dia_vencimento"
-                  type="number"
-                  min="1"
-                  max="31"
-                  value={form.dia_vencimento}
-                  onChange={handleChange}
-                  placeholder="Ex: 10"
-                  style={estiloInput}
-                  onFocus={aoFocar}
-                  onBlur={aoDesfocar}
-                />
+                <input name="dia_vencimento" type="number" min="1" max="31"
+                  value={form.dia_vencimento} onChange={handleChange} placeholder="Ex: 10"
+                  style={estiloInput} onFocus={aoFocar} onBlur={aoDesfocar} />
               </Campo>
-
               <Campo label="Dia de Fechamento">
-                <input
-                  name="dia_fechamento"
-                  type="number"
-                  min="1"
-                  max="31"
-                  value={form.dia_fechamento}
-                  onChange={handleChange}
-                  placeholder="Ex: 5 (opcional)"
-                  style={estiloInput}
-                  onFocus={aoFocar}
-                  onBlur={aoDesfocar}
-                />
+                <input name="dia_fechamento" type="number" min="1" max="31"
+                  value={form.dia_fechamento} onChange={handleChange} placeholder="Ex: 5 (opcional)"
+                  style={estiloInput} onFocus={aoFocar} onBlur={aoDesfocar} />
               </Campo>
-
               <Campo label="Forma de Pagamento" obrigatorio>
-                <select
-                  name="forma_pagamento"
-                  value={form.forma_pagamento}
-                  onChange={handleChange}
-                  style={{ ...estiloInput, cursor: "pointer" }}
-                  onFocus={aoFocar}
-                  onBlur={aoDesfocar}
-                >
+                <select name="forma_pagamento" value={form.forma_pagamento} onChange={handleChange}
+                  style={{ ...estiloInput, cursor: "pointer" }} onFocus={aoFocar} onBlur={aoDesfocar}>
                   {formasPagamento.map((f) => (
-                    <option key={f.id} value={f.nome} style={{ background: "#1a1a1a" }}>
-                      {f.nome}
-                    </option>
+                    <option key={f.id} value={f.nome} style={{ background: "#141414" }}>{f.nome}</option>
                   ))}
                 </select>
               </Campo>
-
               <Campo label="Status">
-                <select
-                  name="status"
-                  value={form.status}
-                  onChange={handleChange}
-                  style={{ ...estiloInput, cursor: "pointer" }}
-                  onFocus={aoFocar}
-                  onBlur={aoDesfocar}
-                >
+                <select name="status" value={form.status} onChange={handleChange}
+                  style={{ ...estiloInput, cursor: "pointer" }} onFocus={aoFocar} onBlur={aoDesfocar}>
                   {STATUS_OPCOES.map((s) => (
-                    <option key={s} value={s} style={{ background: "#1a1a1a" }}>
-                      {s}
-                    </option>
+                    <option key={s} value={s} style={{ background: "#141414" }}>{s}</option>
                   ))}
                 </select>
               </Campo>
             </div>
 
-            {/* Seção 3 — Observações */}
-            <p
-              className="text-xs font-semibold uppercase tracking-widest mb-4"
-              style={{ color: "#c2ff05" }}
-            >
+            {/* Seção 3 */}
+            <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: "#c2ff05" }}>
               Observações
             </p>
-
             <div className="mb-6">
               <Campo label="Observações">
-                <textarea
-                  name="observacoes"
-                  value={form.observacoes}
-                  onChange={handleChange}
-                  placeholder="Informações adicionais..."
-                  rows={3}
+                <textarea name="observacoes" value={form.observacoes} onChange={handleChange}
+                  placeholder="Informações adicionais..." rows={3}
                   style={{ ...estiloInput, resize: "vertical" }}
-                  onFocus={aoFocar}
-                  onBlur={aoDesfocar}
-                />
+                  onFocus={aoFocar} onBlur={aoDesfocar} />
               </Campo>
             </div>
 
             {/* Botões */}
-            <div
-              className="flex items-center justify-end gap-3 pt-5"
-              style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}
-            >
-              <button
-                type="button"
-                onClick={onFechar}
+            <div className="flex items-center justify-end gap-3 pt-5" style={estiloFooter}>
+              <button type="button" onClick={onFechar}
                 className="px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-150"
-                style={{
-                  background: "rgba(255,255,255,0.04)",
-                  border:     "1px solid rgba(255,255,255,0.10)",
-                  color:      "rgba(255,255,255,0.55)",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "rgba(255,255,255,0.08)";
-                  e.currentTarget.style.color      = "#ffffff";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "rgba(255,255,255,0.04)";
-                  e.currentTarget.style.color      = "rgba(255,255,255,0.55)";
-                }}
-              >
+                style={estiloBtnCancelar}
+                onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "#ffffff"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.color = "rgba(255,255,255,0.55)"; }}>
                 Cancelar
               </button>
-
-              <button
-                type="submit"
-                disabled={salvando}
+              <button type="submit" disabled={salvando}
                 className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150"
-                style={{
-                  background: salvando ? "rgba(255,5,113,0.40)" : "#ff0571",
-                  color:      "#ffffff",
-                  border:     "1px solid rgba(255,5,113,0.60)",
-                  boxShadow:  salvando ? "none" : "0 0 20px rgba(255,5,113,0.30)",
-                  cursor:     salvando ? "not-allowed" : "pointer",
-                  opacity:    salvando ? 0.7 : 1,
-                }}
-              >
-                {salvando
-                  ? <Loader2 size={15} className="animate-spin" />
-                  : <Save size={15} />
-                }
+                style={estiloBtnSalvar(salvando)}>
+                {salvando ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
                 {salvando ? "Salvando..." : contaId ? "Salvar Alterações" : "Criar Conta"}
               </button>
             </div>

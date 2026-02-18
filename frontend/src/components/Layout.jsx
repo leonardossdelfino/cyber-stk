@@ -11,6 +11,7 @@ import {
   Receipt, FileText, ShieldCheck, Zap,
 } from "lucide-react";
 import { VERSAO } from "../config/versao";
+import { Download } from 'lucide-react';
 
 // Itens do submenu de configurações
 const ITENS_CONFIG = [
@@ -148,6 +149,18 @@ function Layout() {
               <>
                 <AlertTriangle size={18} style={{ color: isActive ? "#ff0571" : "rgba(255,255,255,0.35)" }} />
                 Perdas e Mau Uso
+              </>
+            )}
+          </NavLink>
+
+          {/* Exportar Dados */}
+          <NavLink to="/exportar-dados"
+            className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200"
+            style={({ isActive }) => estiloNavItem(isActive)}>
+            {({ isActive }) => (
+              <>
+                <Download size={18} style={{ color: isActive ? "#ff0571" : "rgba(255,255,255,0.35)" }} />
+                Exportar Dados
               </>
             )}
           </NavLink>

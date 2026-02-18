@@ -10,6 +10,7 @@ import Configuracoes        from "./pages/Configuracoes";
 import ContasFixas          from "./pages/ContasFixas";
 import ServicosContratados  from "./pages/ServicosContratados";
 import CertificadosDigitais from "./pages/CertificadosDigitais";
+import RegistrosPerdas      from "./pages/RegistrosPerdas";
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
           <Route path="contas-fixas"           element={<ContasFixas />} />
           <Route path="servicos-contratados"   element={<ServicosContratados />} />
           <Route path="certificados-digitais"  element={<CertificadosDigitais />} />
+          <Route path="registros-perdas"       element={<RegistrosPerdas />} />
         </Route>
       </Routes>
     </BrowserRouter>

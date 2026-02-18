@@ -40,10 +40,10 @@ class CertificadoDigital {
     public function criar(array $dados): int|false {
         $sql = "INSERT INTO {$this->table}
                     (nome, tipo, responsavel, area, descricao,
-                     data_emissao, data_vencimento, status)
+                     data_emissao, data_vencimento, valor_pago, status)
                 VALUES
                     (:nome, :tipo, :responsavel, :area, :descricao,
-                     :data_emissao, :data_vencimento, :status)";
+                     :data_emissao, :data_vencimento, :valor_pago, :status)";
 
         $stmt = $this->conn->prepare($sql);
         $stmt->bindValue(':nome',            $dados['nome'],                        PDO::PARAM_STR);
@@ -53,6 +53,7 @@ class CertificadoDigital {
         $stmt->bindValue(':descricao',       $dados['descricao']       ?? null,     PDO::PARAM_STR);
         $stmt->bindValue(':data_emissao',    $dados['data_emissao']    ?: null,     PDO::PARAM_STR);
         $stmt->bindValue(':data_vencimento', $dados['data_vencimento'],             PDO::PARAM_STR);
+        $stmt->bindValue(':valor_pago',      $dados['valor_pago']      ?? null,     PDO::PARAM_STR);
         $stmt->bindValue(':status',          $dados['status']          ?? 'Ativo',  PDO::PARAM_STR);
 
         if ($stmt->execute()) {
@@ -73,6 +74,7 @@ class CertificadoDigital {
                     descricao       = :descricao,
                     data_emissao    = :data_emissao,
                     data_vencimento = :data_vencimento,
+                    valor_pago      = :valor_pago,
                     status          = :status
                 WHERE id = :id";
 
@@ -85,6 +87,7 @@ class CertificadoDigital {
         $stmt->bindValue(':descricao',       $dados['descricao']       ?? null,     PDO::PARAM_STR);
         $stmt->bindValue(':data_emissao',    $dados['data_emissao']    ?: null,     PDO::PARAM_STR);
         $stmt->bindValue(':data_vencimento', $dados['data_vencimento'],             PDO::PARAM_STR);
+        $stmt->bindValue(':valor_pago',      $dados['valor_pago']      ?? null,     PDO::PARAM_STR);
         $stmt->bindValue(':status',          $dados['status']          ?? 'Ativo',  PDO::PARAM_STR);
 
         return $stmt->execute();

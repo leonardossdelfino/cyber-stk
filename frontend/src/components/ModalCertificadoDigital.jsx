@@ -1,6 +1,7 @@
 // =============================================================================
 // Component: ModalCertificadoDigital.jsx
 // Responsabilidade: Modal de criação e edição de certificados digitais
+// Nome/Razão Social puxa dos fornecedores + Descrição obrigatória
 // =============================================================================
 
 import { useState, useEffect } from 'react';
@@ -41,13 +42,16 @@ export default function ModalCertificadoDigital({ cert, onSucesso, onFechar }) {
     descricao:       '',
     data_emissao:    '',
     data_vencimento: '',
+    valor_pago:      '',
     status:          'Ativo',
   });
 
-  const [salvando, setSalvando] = useState(false);
-  const [erro, setErro]         = useState(null);
+  const [fornecedores, setFornecedores] = useState([]);
+  const [salvando, setSalvando]         = useState(false);
+  const [erro, setErro]                 = useState(null);
 
   useEffect(() => {
+    carregarFornecedores();
     if (editando) {
       setForm({
         nome:            cert.nome            ?? '',
@@ -57,10 +61,21 @@ export default function ModalCertificadoDigital({ cert, onSucesso, onFechar }) {
         descricao:       cert.descricao       ?? '',
         data_emissao:    cert.data_emissao    ?? '',
         data_vencimento: cert.data_vencimento ?? '',
+        valor_pago:      cert.valor_pago      ?? '',
         status:          cert.status          ?? 'Ativo',
       });
     }
   }, []);
+
+  async function carregarFornecedores() {
+    try {
+      const res  = await fetch(`${API_URL}/configuracoes.php?tabela=fornecedores`);
+      const data = await res.json();
+      setFornecedores(Array.isArray(data) ? data : []);
+    } catch {
+      setErro('Erro ao carregar fornecedores.');
+    }
+  }
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -71,8 +86,8 @@ export default function ModalCertificadoDigital({ cert, onSucesso, onFechar }) {
     e.preventDefault();
     setErro(null);
 
-    if (!form.nome || !form.tipo || !form.data_vencimento) {
-      setErro('Preencha os campos obrigatórios: Nome, Tipo e Data de vencimento.');
+    if (!form.nome || !form.tipo || !form.descricao || !form.data_vencimento) {
+      setErro('Preencha os campos obrigatórios: Nome/Razão Social, Tipo, Descrição e Data de vencimento.');
       return;
     }
 
@@ -91,7 +106,6 @@ export default function ModalCertificadoDigital({ cert, onSucesso, onFechar }) {
         : `${API_URL}/certificados_digitais.php`;
       const method = editando ? 'PUT' : 'POST';
 
-      // Envia como JSON puro (sem arquivo)
       const res  = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
@@ -114,7 +128,7 @@ export default function ModalCertificadoDigital({ cert, onSucesso, onFechar }) {
 
   return (
     <div style={estiloOverlay} onClick={onFechar}>
-      <div style={estiloModal('520px')} onClick={e => e.stopPropagation()}>
+      <div style={estiloModal('560px')} onClick={e => e.stopPropagation()}>
 
         {/* Cabeçalho */}
         <div className="flex items-center justify-between px-6 py-4" style={estiloHeader}>
@@ -132,12 +146,16 @@ export default function ModalCertificadoDigital({ cert, onSucesso, onFechar }) {
         <form onSubmit={handleSubmit}>
           <div className="px-6 py-4 flex flex-col gap-4">
 
-            {/* Nome */}
+            {/* Nome / Razão Social */}
             <Campo label="Nome / Razão Social *">
-              <input name="nome" value={form.nome} onChange={handleChange}
-                     onFocus={aoFocar} onBlur={aoDesfocar}
-                     style={{ ...estiloInput }}
-                     placeholder="Ex: Empresa LTDA" required />
+              <select name="nome" value={form.nome} onChange={handleChange}
+                      onFocus={aoFocar} onBlur={aoDesfocar}
+                      style={{ ...estiloInput }} required>
+                <option value="">Selecione um fornecedor</option>
+                {fornecedores.map(f => (
+                  <option key={f.id} value={f.razao_social}>{f.razao_social}</option>
+                ))}
+              </select>
             </Campo>
 
             {/* Tipo + Status */}
@@ -197,12 +215,21 @@ export default function ModalCertificadoDigital({ cert, onSucesso, onFechar }) {
               </Campo>
             </div>
 
+            {/* Valor pago */}
+            <Campo label="Valor pago (R$)">
+              <input name="valor_pago" type="number" min="0" step="0.01"
+                     value={form.valor_pago} onChange={handleChange}
+                     onFocus={aoFocar} onBlur={aoDesfocar}
+                     style={{ ...estiloInput }}
+                     placeholder="0,00" />
+            </Campo>
+
             {/* Descrição */}
-            <Campo label="Descrição do uso">
+            <Campo label="Descrição do uso *">
               <textarea name="descricao" value={form.descricao} onChange={handleChange}
                         onFocus={aoFocar} onBlur={aoDesfocar}
                         style={{ ...estiloInput, resize: 'vertical', minHeight: '80px' }}
-                        placeholder="Ex: Utilizado para assinatura de NF-e e contratos..." />
+                        placeholder="Ex: Utilizado para assinatura de NF-e e contratos..." required />
             </Campo>
 
             {/* Erro */}

@@ -8,7 +8,7 @@ import {
   LayoutDashboard, ShoppingCart, Settings,
   ChevronDown, ChevronUp, Users, Tag, CreditCard,
   CheckSquare, ClipboardList, Cpu, AlertTriangle,
-  Receipt, FileText, ShieldCheck,
+  Receipt, FileText, ShieldCheck, Zap,
 } from "lucide-react";
 import { VERSAO } from "../config/versao";
 
@@ -21,6 +21,7 @@ const ITENS_CONFIG = [
   { aba: "status_oc",        icon: ClipboardList, label: "Status da OC"        },
   { aba: "perifericos",      icon: Cpu,           label: "Periféricos"         },
   { aba: "incidentes",       icon: AlertTriangle, label: "Incidentes"          },
+  { aba: "acoes_incidente",  icon: Zap,           label: "Ações de Incidente"  },
 ];
 
 // Estilo de item de navegação ativo/inativo
@@ -135,6 +136,18 @@ function Layout() {
               <>
                 <ShieldCheck size={18} style={{ color: isActive ? "#ff0571" : "rgba(255,255,255,0.35)" }} />
                 Certificados Digitais
+              </>
+            )}
+          </NavLink>
+
+          {/* Registros de Perdas e Mau Uso */}
+          <NavLink to="/registros-perdas"
+            className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200"
+            style={({ isActive }) => estiloNavItem(isActive)}>
+            {({ isActive }) => (
+              <>
+                <AlertTriangle size={18} style={{ color: isActive ? "#ff0571" : "rgba(255,255,255,0.35)" }} />
+                Perdas e Mau Uso
               </>
             )}
           </NavLink>

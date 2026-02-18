@@ -36,8 +36,10 @@ export default function ModalRegistroPerda({ registro, onSucesso, onFechar }) {
     tipo:           '',
     nome_pessoa:    '',
     area:           '',
+    chamado_os:     '',
     periferico:     '',
     descricao:      '',
+    custo:          '',
     acao_tomada:    '',
     data_incidente: hoje,
   });
@@ -55,8 +57,10 @@ export default function ModalRegistroPerda({ registro, onSucesso, onFechar }) {
         tipo:           registro.tipo           ?? '',
         nome_pessoa:    registro.nome_pessoa    ?? '',
         area:           registro.area           ?? '',
+        chamado_os:     registro.chamado_os     ?? '',
         periferico:     registro.periferico     ?? '',
         descricao:      registro.descricao      ?? '',
+        custo:          registro.custo          ?? '',
         acao_tomada:    registro.acao_tomada    ?? '',
         data_incidente: registro.data_incidente ?? hoje,
       });
@@ -83,7 +87,6 @@ export default function ModalRegistroPerda({ registro, onSucesso, onFechar }) {
       setPerifericos(peri);
       setAcoesIncidente(acoes);
 
-      // Define valores padrão após carregar se não está editando
       if (!editando) {
         setForm(prev => ({
           ...prev,
@@ -141,7 +144,7 @@ export default function ModalRegistroPerda({ registro, onSucesso, onFechar }) {
 
   return (
     <div style={estiloOverlay} onClick={onFechar}>
-      <div style={estiloModal('520px')} onClick={e => e.stopPropagation()}>
+      <div style={estiloModal('560px')} onClick={e => e.stopPropagation()}>
 
         {/* Cabeçalho */}
         <div className="flex items-center justify-between px-6 py-4" style={estiloHeader}>
@@ -197,6 +200,14 @@ export default function ModalRegistroPerda({ registro, onSucesso, onFechar }) {
               </Campo>
             </div>
 
+            {/* Chamado/OS */}
+            <Campo label="Chamado / OS">
+              <input name="chamado_os" value={form.chamado_os} onChange={handleChange}
+                     onFocus={aoFocar} onBlur={aoDesfocar}
+                     style={{ ...estiloInput }}
+                     placeholder="Ex: #12345 ou OS-9876" />
+            </Campo>
+
             {/* Periférico + Ação */}
             <div className="grid grid-cols-2 gap-3">
               <Campo label="Periférico entregue">
@@ -223,6 +234,15 @@ export default function ModalRegistroPerda({ registro, onSucesso, onFechar }) {
                 </select>
               </Campo>
             </div>
+
+            {/* Custo */}
+            <Campo label="Custo do incidente (R$)">
+              <input name="custo" type="number" min="0" step="0.01"
+                     value={form.custo} onChange={handleChange}
+                     onFocus={aoFocar} onBlur={aoDesfocar}
+                     style={{ ...estiloInput }}
+                     placeholder="0,00" />
+            </Campo>
 
             {/* Descrição */}
             <Campo label="Descrição do ocorrido">

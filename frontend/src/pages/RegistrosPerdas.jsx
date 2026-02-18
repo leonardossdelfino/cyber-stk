@@ -2,11 +2,12 @@
 // Page: RegistrosPerdas.jsx
 // Responsabilidade: Listagem de registros de perdas e mau uso em tabela
 // Padrão visual: idêntico ao restante da aplicação
+// Busca em tempo real por tipo, pessoa, área, chamado/OS e periférico
 // =============================================================================
 
 import { useState, useEffect } from 'react';
 import {
-  Plus, Pencil, Trash2, Loader2, RefreshCw,
+  Plus, Pencil, Trash2, Loader2, RefreshCw, Search,
   AlertTriangle,
 } from 'lucide-react';
 import ModalRegistroPerda from '../components/ModalRegistroPerda';
@@ -60,14 +61,15 @@ function BadgeAcao({ acao }) {
 // Página principal
 // -----------------------------------------------------------------------------
 export default function RegistrosPerdas() {
-  const [registros, setRegistros]           = useState([]);
-  const [carregando, setCarregando]         = useState(true);
-  const [erro, setErro]                     = useState(null);
-  const [deletando, setDeletando]           = useState(null);
-  const [modalAberto, setModalAberto]       = useState(false);
-  const [registroEditando, setRegistroEditando] = useState(null);
-  const [confirmDelete, setConfirmDelete]   = useState(null);
-  const [filtroTipo, setFiltroTipo]         = useState('Todos');
+  const [registros, setRegistros]                   = useState([]);
+  const [carregando, setCarregando]                 = useState(true);
+  const [erro, setErro]                             = useState(null);
+  const [deletando, setDeletando]                   = useState(null);
+  const [modalAberto, setModalAberto]               = useState(false);
+  const [registroEditando, setRegistroEditando]     = useState(null);
+  const [confirmDelete, setConfirmDelete]           = useState(null);
+  const [filtroTipo, setFiltroTipo]                 = useState('Todos');
+  const [busca, setBusca]                           = useState('');
 
   const tiposFiltro = ['Todos', 'Perda', 'Roubo', 'Mau uso', 'Quebra', 'Outros'];
 
@@ -106,9 +108,23 @@ export default function RegistrosPerdas() {
     }
   }
 
-  const registrosFiltrados = filtroTipo === 'Todos'
-    ? registros
-    : registros.filter(r => r.tipo === filtroTipo);
+  // Filtragem por tipo e busca
+  const registrosFiltrados = registros.filter(r => {
+    // Filtro de tipo
+    const passaTipo = filtroTipo === 'Todos' || r.tipo === filtroTipo;
+    if (!passaTipo) return false;
+
+    // Filtro de busca
+    if (!busca) return true;
+    const q = busca.toLowerCase();
+    return (
+      r.tipo?.toLowerCase().includes(q)        ||
+      r.nome_pessoa?.toLowerCase().includes(q) ||
+      r.area?.toLowerCase().includes(q)        ||
+      r.chamado_os?.toLowerCase().includes(q)  ||
+      r.periferico?.toLowerCase().includes(q)
+    );
+  });
 
   return (
     <div className="p-6" style={{ background: '#111111', minHeight: '100vh' }}>
@@ -123,6 +139,36 @@ export default function RegistrosPerdas() {
         </div>
 
         <div className="flex items-center gap-3">
+
+          {/* Campo de busca */}
+          <div className="relative">
+            <Search size={14}
+              className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+              style={{ color: 'rgba(255,255,255,0.30)' }}
+            />
+            <input
+              type="text"
+              placeholder="Buscar registro..."
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              className="pl-9 pr-4 py-2.5 rounded-lg text-sm outline-none transition-all duration-200"
+              style={{
+                background: 'rgba(255,255,255,0.04)',
+                border:     '1px solid rgba(255,255,255,0.08)',
+                color:      '#ffffff',
+                width:      '220px',
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = 'rgba(255,5,113,0.40)';
+                e.target.style.boxShadow   = '0 0 0 3px rgba(255,5,113,0.08)';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = 'rgba(255,255,255,0.08)';
+                e.target.style.boxShadow   = 'none';
+              }}
+            />
+          </div>
+
           <button onClick={carregarRegistros}
             className="flex items-center justify-center w-10 h-10 rounded-lg transition-all duration-150"
             style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.45)' }}
@@ -198,11 +244,14 @@ export default function RegistrosPerdas() {
           style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
           <AlertTriangle size={36} style={{ color: 'rgba(255,255,255,0.15)' }} />
           <p className="text-sm" style={{ color: 'rgba(255,255,255,0.30)' }}>
-            {filtroTipo === 'Todos'
-              ? 'Nenhum registro cadastrado ainda.'
-              : `Nenhum registro do tipo "${filtroTipo}".`}
+            {busca
+              ? 'Nenhum registro encontrado com os filtros aplicados.'
+              : filtroTipo === 'Todos'
+                ? 'Nenhum registro cadastrado ainda.'
+                : `Nenhum registro do tipo "${filtroTipo}".`
+            }
           </p>
-          {filtroTipo === 'Todos' && (
+          {filtroTipo === 'Todos' && !busca && (
             <button onClick={abrirModal}
               className="text-xs px-4 py-2 rounded-lg transition"
               style={{ background: 'rgba(255,5,113,0.12)', color: '#ff0571', border: '1px solid rgba(255,5,113,0.25)' }}>
@@ -217,7 +266,7 @@ export default function RegistrosPerdas() {
           <table className="w-full text-sm">
             <thead>
               <tr style={{ background: 'rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-                {['Data', 'Tipo', 'Pessoa', 'Área', 'Periférico', 'Ação', ''].map(col => (
+                {['Data', 'Tipo', 'Pessoa', 'Área', 'Chamado/OS', 'Periférico', 'Custo', 'Ação', ''].map(col => (
                   <th key={col} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider"
                     style={{ color: 'rgba(255,255,255,0.35)' }}>
                     {col}
@@ -244,7 +293,13 @@ export default function RegistrosPerdas() {
                   <td className="px-4 py-3 text-white">{reg.nome_pessoa}</td>
                   <td className="px-4 py-3" style={{ color: 'rgba(255,255,255,0.55)' }}>{reg.area}</td>
                   <td className="px-4 py-3" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                    {reg.chamado_os || <span style={{ color: 'rgba(255,255,255,0.25)' }}>—</span>}
+                  </td>
+                  <td className="px-4 py-3" style={{ color: 'rgba(255,255,255,0.55)' }}>
                     {reg.periferico || <span style={{ color: 'rgba(255,255,255,0.25)' }}>—</span>}
+                  </td>
+                  <td className="px-4 py-3 text-white font-medium">
+                    {reg.custo ? `R$ ${parseFloat(reg.custo).toFixed(2)}` : <span style={{ color: 'rgba(255,255,255,0.25)' }}>—</span>}
                   </td>
                   <td className="px-4 py-3">
                     <BadgeAcao acao={reg.acao_tomada} />

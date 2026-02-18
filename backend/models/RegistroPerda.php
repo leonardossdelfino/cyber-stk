@@ -39,18 +39,20 @@ class RegistroPerda {
     // -------------------------------------------------------------------------
     public function criar(array $dados): int|false {
         $sql = "INSERT INTO {$this->table}
-                    (tipo, nome_pessoa, area, periferico,
-                     descricao, acao_tomada, data_incidente)
+                    (tipo, nome_pessoa, area, chamado_os, periferico,
+                     descricao, custo, acao_tomada, data_incidente)
                 VALUES
-                    (:tipo, :nome_pessoa, :area, :periferico,
-                     :descricao, :acao_tomada, :data_incidente)";
+                    (:tipo, :nome_pessoa, :area, :chamado_os, :periferico,
+                     :descricao, :custo, :acao_tomada, :data_incidente)";
 
         $stmt = $this->conn->prepare($sql);
         $stmt->bindValue(':tipo',           $dados['tipo'],                    PDO::PARAM_STR);
         $stmt->bindValue(':nome_pessoa',    $dados['nome_pessoa'],             PDO::PARAM_STR);
         $stmt->bindValue(':area',           $dados['area'],                    PDO::PARAM_STR);
+        $stmt->bindValue(':chamado_os',     $dados['chamado_os']  ?? null,     PDO::PARAM_STR);
         $stmt->bindValue(':periferico',     $dados['periferico']  ?? null,     PDO::PARAM_STR);
         $stmt->bindValue(':descricao',      $dados['descricao']   ?? null,     PDO::PARAM_STR);
+        $stmt->bindValue(':custo',          $dados['custo']       ?? null,     PDO::PARAM_STR);
         $stmt->bindValue(':acao_tomada',    $dados['acao_tomada'],             PDO::PARAM_STR);
         $stmt->bindValue(':data_incidente', $dados['data_incidente'],          PDO::PARAM_STR);
 
@@ -68,8 +70,10 @@ class RegistroPerda {
                     tipo           = :tipo,
                     nome_pessoa    = :nome_pessoa,
                     area           = :area,
+                    chamado_os     = :chamado_os,
                     periferico     = :periferico,
                     descricao      = :descricao,
+                    custo          = :custo,
                     acao_tomada    = :acao_tomada,
                     data_incidente = :data_incidente
                 WHERE id = :id";
@@ -79,8 +83,10 @@ class RegistroPerda {
         $stmt->bindValue(':tipo',           $dados['tipo'],                    PDO::PARAM_STR);
         $stmt->bindValue(':nome_pessoa',    $dados['nome_pessoa'],             PDO::PARAM_STR);
         $stmt->bindValue(':area',           $dados['area'],                    PDO::PARAM_STR);
+        $stmt->bindValue(':chamado_os',     $dados['chamado_os']  ?? null,     PDO::PARAM_STR);
         $stmt->bindValue(':periferico',     $dados['periferico']  ?? null,     PDO::PARAM_STR);
         $stmt->bindValue(':descricao',      $dados['descricao']   ?? null,     PDO::PARAM_STR);
+        $stmt->bindValue(':custo',          $dados['custo']       ?? null,     PDO::PARAM_STR);
         $stmt->bindValue(':acao_tomada',    $dados['acao_tomada'],             PDO::PARAM_STR);
         $stmt->bindValue(':data_incidente', $dados['data_incidente'],          PDO::PARAM_STR);
 

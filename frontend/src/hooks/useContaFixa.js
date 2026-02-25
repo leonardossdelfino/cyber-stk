@@ -11,13 +11,24 @@ export function useContaFixa() {
   const [contas,       setContas]       = useState([]);
   const [loading,      setLoading]      = useState(true);
   const [deletando,    setDeletando]    = useState(null);
+  const [erro,         setErro]         = useState(null);
   const [filtroStatus, setFiltroStatus] = useState("Todos");
 
   const carregarContas = useCallback(async () => {
     setLoading(true);
+    setErro(null);
     try {
-      const dados = await listarContasFixas();
-      setContas(Array.isArray(dados) ? dados : []);
+      const res = await listarContasFixas();
+      // contas_fixas.php agora retorna { success, data }
+      if (res?.success) {
+        setContas(Array.isArray(res.data) ? res.data : []);
+      } else {
+        setErro("Erro ao carregar contas fixas.");
+        setContas([]);
+      }
+    } catch {
+      setErro("Erro de conexão com a API.");
+      setContas([]);
     } finally {
       setLoading(false);
     }
@@ -55,6 +66,7 @@ export function useContaFixa() {
     contas,
     loading,
     deletando,
+    erro,
     filtroStatus,
     setFiltroStatus,
     carregarContas,

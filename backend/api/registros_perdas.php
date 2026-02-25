@@ -4,66 +4,56 @@
 // Endpoints: GET, POST, PUT, DELETE
 // =============================================================================
 
-require_once __DIR__ . '/../config/database.php';
-require_once __DIR__ . '/../models/RegistroPerda.php';
-
-header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
+// CORS consistente com os demais endpoints da aplicação
+$origem_permitida = getenv("CORS_ORIGIN") ?: "*";
+header("Access-Control-Allow-Origin: $origem_permitida");
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
+header('Content-Type: application/json; charset=utf-8');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(204);
+    http_response_code(200);
     exit;
 }
 
-// -------------------------------------------------------------------------
-// Conexão e instância do model
-// -------------------------------------------------------------------------
 try {
+    require_once __DIR__ . '/../config/database.php';
+    require_once __DIR__ . '/../models/RegistroPerda.php';
     $database = new Database();
     $conn     = $database->getConnection();
     $model    = new RegistroPerda($conn);
 } catch (Exception $e) {
-    http_response_code(500);
-    echo json_encode(['erro' => 'Falha na conexão com o banco de dados.']);
+    http_response_code(503);
+    echo json_encode(['success' => false, 'message' => 'Serviço indisponível. Tente novamente.']);
     exit;
 }
 
 $method = $_SERVER['REQUEST_METHOD'];
 $id     = isset($_GET['id']) ? (int) $_GET['id'] : null;
 
-// -------------------------------------------------------------------------
-// Roteamento
-// -------------------------------------------------------------------------
 switch ($method) {
 
-    // -----------------------------------------------------------------------
-    // GET — Lista todos ou busca um por ID
-    // -----------------------------------------------------------------------
     case 'GET':
         if ($id) {
             $registro = $model->buscarPorId($id);
-            if ($registro) {
-                echo json_encode($registro);
-            } else {
+            if (!$registro) {
                 http_response_code(404);
-                echo json_encode(['erro' => 'Registro não encontrado.']);
+                echo json_encode(['success' => false, 'message' => 'Registro não encontrado.']);
+                exit;
             }
+            echo json_encode(['success' => true, 'data' => $registro]);
         } else {
-            echo json_encode($model->listar());
+            $lista = $model->listar();
+            echo json_encode(['success' => true, 'data' => $lista, 'total' => count($lista)]);
         }
         break;
 
-    // -----------------------------------------------------------------------
-    // POST — Cria novo registro
-    // -----------------------------------------------------------------------
     case 'POST':
         $dados = json_decode(file_get_contents('php://input'), true);
 
         if (!is_array($dados)) {
             http_response_code(400);
-            echo json_encode(['erro' => 'Dados inválidos.']);
+            echo json_encode(['success' => false, 'message' => 'Dados inválidos ou body vazio.']);
             exit;
         }
 
@@ -71,27 +61,31 @@ switch ($method) {
             empty($dados['area']) || empty($dados['acao_tomada']) ||
             empty($dados['data_incidente'])) {
             http_response_code(400);
-            echo json_encode(['erro' => 'Campos obrigatórios: tipo, nome_pessoa, area, acao_tomada, data_incidente.']);
+            echo json_encode(['success' => false, 'message' => 'Campos obrigatórios: tipo, nome_pessoa, area, acao_tomada, data_incidente.']);
             exit;
         }
 
         $novoId = $model->criar($dados);
         if ($novoId) {
             http_response_code(201);
-            echo json_encode(['mensagem' => 'Registro criado com sucesso.', 'id' => $novoId]);
+            echo json_encode(['success' => true, 'message' => 'Registro criado com sucesso.', 'id' => $novoId]);
         } else {
             http_response_code(500);
-            echo json_encode(['erro' => 'Erro ao criar registro.']);
+            echo json_encode(['success' => false, 'message' => 'Erro ao criar registro.']);
         }
         break;
 
-    // -----------------------------------------------------------------------
-    // PUT — Atualiza registro existente
-    // -----------------------------------------------------------------------
     case 'PUT':
         if (!$id) {
             http_response_code(400);
-            echo json_encode(['erro' => 'ID obrigatório para atualização.']);
+            echo json_encode(['success' => false, 'message' => 'ID obrigatório para atualização.']);
+            exit;
+        }
+
+        $existe = $model->buscarPorId($id);
+        if (!$existe) {
+            http_response_code(404);
+            echo json_encode(['success' => false, 'message' => 'Registro não encontrado.']);
             exit;
         }
 
@@ -99,7 +93,7 @@ switch ($method) {
 
         if (!is_array($dados)) {
             http_response_code(400);
-            echo json_encode(['erro' => 'Dados inválidos.']);
+            echo json_encode(['success' => false, 'message' => 'Dados inválidos ou body vazio.']);
             exit;
         }
 
@@ -107,38 +101,42 @@ switch ($method) {
             empty($dados['area']) || empty($dados['acao_tomada']) ||
             empty($dados['data_incidente'])) {
             http_response_code(400);
-            echo json_encode(['erro' => 'Campos obrigatórios: tipo, nome_pessoa, area, acao_tomada, data_incidente.']);
+            echo json_encode(['success' => false, 'message' => 'Campos obrigatórios: tipo, nome_pessoa, area, acao_tomada, data_incidente.']);
             exit;
         }
 
         if ($model->atualizar($id, $dados)) {
-            echo json_encode(['mensagem' => 'Registro atualizado com sucesso.']);
+            echo json_encode(['success' => true, 'message' => 'Registro atualizado com sucesso.']);
         } else {
             http_response_code(500);
-            echo json_encode(['erro' => 'Erro ao atualizar registro.']);
+            echo json_encode(['success' => false, 'message' => 'Erro ao atualizar registro.']);
         }
         break;
 
-    // -----------------------------------------------------------------------
-    // DELETE — Remove registro
-    // -----------------------------------------------------------------------
     case 'DELETE':
         if (!$id) {
             http_response_code(400);
-            echo json_encode(['erro' => 'ID obrigatório para exclusão.']);
+            echo json_encode(['success' => false, 'message' => 'ID obrigatório para exclusão.']);
+            exit;
+        }
+
+        $existe = $model->buscarPorId($id);
+        if (!$existe) {
+            http_response_code(404);
+            echo json_encode(['success' => false, 'message' => 'Registro não encontrado.']);
             exit;
         }
 
         if ($model->deletar($id)) {
-            echo json_encode(['mensagem' => 'Registro removido com sucesso.']);
+            echo json_encode(['success' => true, 'message' => 'Registro removido com sucesso.']);
         } else {
             http_response_code(500);
-            echo json_encode(['erro' => 'Erro ao remover registro.']);
+            echo json_encode(['success' => false, 'message' => 'Erro ao remover registro.']);
         }
         break;
 
     default:
         http_response_code(405);
-        echo json_encode(['erro' => 'Método não permitido.']);
+        echo json_encode(['success' => false, 'message' => 'Método não permitido.']);
         break;
 }

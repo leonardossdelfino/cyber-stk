@@ -19,12 +19,14 @@ import {
 
 const STATUS_OPCOES = ["Ativa", "Inativa", "Cancelada"];
 
+const FORM_INICIAL = {
+  nome: "", fornecedor: "", valor: "", dia_vencimento: "",
+  dia_fechamento: "", forma_pagamento: "", categoria: "",
+  status: "Ativa", observacoes: "",
+};
+
 function ModalContaFixa({ contaId, onFechar, onSalvo }) {
-  const [form, setForm] = useState({
-    nome: "", fornecedor: "", valor: "", dia_vencimento: "",
-    dia_fechamento: "", forma_pagamento: "", categoria: "",
-    status: "Ativa", observacoes: "",
-  });
+  const [form,           setForm]           = useState(FORM_INICIAL);
   const [categorias,     setCategorias]     = useState([]);
   const [formasPagamento, setFormasPagamento] = useState([]);
   const [salvando,       setSalvando]       = useState(false);
@@ -40,14 +42,24 @@ function ModalContaFixa({ contaId, onFechar, onSalvo }) {
     const carregar = async () => {
       try {
         setCarregando(true);
+        setErro("");
+
         const [cats, formas] = await Promise.all([
           listarConfiguracao("categorias"),
           listarConfiguracao("formas_pagamento"),
         ]);
+
         setCategorias(cats);
         setFormasPagamento(formas);
+
         if (contaId) {
-          const conta = await buscarContaFixa(contaId);
+          // Modo edição — contas_fixas.php retorna { success, data }
+          const res = await buscarContaFixa(contaId);
+          if (!res?.success) {
+            setErro("Conta não encontrada.");
+            return;
+          }
+          const conta = res.data;
           setForm({
             nome:            conta.nome,
             fornecedor:      conta.fornecedor,
@@ -60,6 +72,7 @@ function ModalContaFixa({ contaId, onFechar, onSalvo }) {
             observacoes:     conta.observacoes ?? "",
           });
         } else {
+          // Modo criação — preenche defaults com primeiro item de cada lista
           setForm((prev) => ({
             ...prev,
             categoria:       cats.length  > 0 ? cats[0].nome   : "",
@@ -78,23 +91,34 @@ function ModalContaFixa({ contaId, onFechar, onSalvo }) {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+    setErro("");
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErro("");
+
     if (!form.nome.trim())                        return setErro("Nome é obrigatório.");
     if (!form.fornecedor.trim())                  return setErro("Fornecedor é obrigatório.");
     if (!form.valor || isNaN(Number(form.valor))) return setErro("Valor inválido.");
+    if (Number(form.valor) < 0)                   return setErro("Valor não pode ser negativo.");
     if (!form.dia_vencimento)                     return setErro("Dia de vencimento é obrigatório.");
     if (!form.categoria)                          return setErro("Categoria é obrigatória.");
     if (!form.forma_pagamento)                    return setErro("Forma de pagamento é obrigatória.");
+
     try {
       setSalvando(true);
-      contaId ? await atualizarContaFixa(contaId, form) : await criarContaFixa(form);
-      onSalvo();
+      const res = contaId
+        ? await atualizarContaFixa(contaId, form)
+        : await criarContaFixa(form);
+
+      if (res?.success) {
+        onSalvo();
+      } else {
+        setErro(res?.message || "Erro ao salvar. Tente novamente.");
+      }
     } catch {
-      setErro("Erro ao salvar. Tente novamente.");
+      setErro("Erro de conexão com a API.");
     } finally {
       setSalvando(false);
     }
@@ -147,7 +171,7 @@ function ModalContaFixa({ contaId, onFechar, onSalvo }) {
               <Campo label="Fornecedor" obrigatorio>
                 <InputFornecedor
                   value={form.fornecedor}
-                  onChange={(val) => setForm((prev) => ({ ...prev, fornecedor: val }))}
+                  onChange={(val) => { setForm((prev) => ({ ...prev, fornecedor: val })); setErro(""); }}
                 />
               </Campo>
               <Campo label="Categoria" obrigatorio>

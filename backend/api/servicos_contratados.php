@@ -1,107 +1,104 @@
 <?php
 // =============================================================================
 // API: servicos_contratados.php
-// Endpoints: GET, POST, PUT, DELETE + upload de contrato
+// Endpoints: GET, POST, PUT (via POST+_method), DELETE + upload de contrato
 // =============================================================================
 
-require_once __DIR__ . '/../config/database.php';
-require_once __DIR__ . '/../models/ServicoContratado.php';
-
-header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
+// CORS consistente com os demais endpoints da aplicação
+$origem_permitida = getenv("CORS_ORIGIN") ?: "*";
+header("Access-Control-Allow-Origin: $origem_permitida");
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
+header('Content-Type: application/json; charset=utf-8');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(204);
+    http_response_code(200);
     exit;
 }
 
-// -------------------------------------------------------------------------
-// Conexão e instância do model
-// -------------------------------------------------------------------------
+// try/catch captura exceção PDO lançada pelo Database
 try {
+    require_once __DIR__ . '/../config/database.php';
+    require_once __DIR__ . '/../models/ServicoContratado.php';
     $database = new Database();
     $conn     = $database->getConnection();
     $model    = new ServicoContratado($conn);
 } catch (Exception $e) {
-    http_response_code(500);
-    echo json_encode(['erro' => 'Falha na conexão com o banco de dados.']);
+    http_response_code(503);
+    echo json_encode(['success' => false, 'message' => 'Serviço indisponível. Tente novamente.']);
     exit;
 }
 
 $method = $_SERVER['REQUEST_METHOD'];
 $id     = isset($_GET['id']) ? (int) $_GET['id'] : null;
 
-// Suporte a _method para contornar limitação do PHP com multipart PUT
+// PHP não lê multipart/form-data em PUT nativo
+// Solução: POST com _method=PUT no FormData
 if ($method === 'POST' && isset($_POST['_method']) && $_POST['_method'] === 'PUT') {
     $method = 'PUT';
 }
 
-// -------------------------------------------------------------------------
-// Roteamento
-// -------------------------------------------------------------------------
 switch ($method) {
 
     // -----------------------------------------------------------------------
-    // GET — Lista todos ou busca um por ID
+    // GET — Lista todos ou busca por ID
     // -----------------------------------------------------------------------
     case 'GET':
         if ($id) {
             $servico = $model->buscarPorId($id);
-            if ($servico) {
-                echo json_encode($servico);
-            } else {
+            if (!$servico) {
                 http_response_code(404);
-                echo json_encode(['erro' => 'Serviço não encontrado.']);
+                echo json_encode(['success' => false, 'message' => 'Serviço não encontrado.']);
+                exit;
             }
+            echo json_encode(['success' => true, 'data' => $servico]);
         } else {
-            echo json_encode($model->listar());
+            $lista = $model->listar();
+            echo json_encode(['success' => true, 'data' => $lista, 'total' => count($lista)]);
         }
         break;
 
     // -----------------------------------------------------------------------
-    // POST — Cria novo serviço (com ou sem arquivo)
+    // POST — Cria novo serviço
     // -----------------------------------------------------------------------
     case 'POST':
         $dados = [
-            'nome'             => $_POST['nome']            ?? '',
-            'fornecedor'       => $_POST['fornecedor']      ?? '',
-            'categoria'        => $_POST['categoria']       ?? '',
-            'forma_pagamento'  => $_POST['forma_pagamento'] ?? '',
-            'descricao'        => $_POST['descricao']       ?? null,
-            'valor_total'      => $_POST['valor_total']     ?? 0,
-            'data_inicio'      => $_POST['data_inicio']     ?? '',
-            'data_termino'     => $_POST['data_termino']    ?? '',
-            'status'           => $_POST['status']          ?? 'Ativa',
+            'nome'             => trim($_POST['nome']            ?? ''),
+            'fornecedor'       => trim($_POST['fornecedor']      ?? ''),
+            'categoria'        => trim($_POST['categoria']       ?? ''),
+            'forma_pagamento'  => trim($_POST['forma_pagamento'] ?? ''),
+            'descricao'        => trim($_POST['descricao']       ?? '') ?: null,
+            'valor_total'      => $_POST['valor_total']          ?? 0,
+            'data_inicio'      => trim($_POST['data_inicio']     ?? ''),
+            'data_termino'     => trim($_POST['data_termino']    ?? ''),
+            'status'           => trim($_POST['status']          ?? 'Ativa'),
             'arquivo_contrato' => null,
         ];
 
         if (empty($dados['nome']) || empty($dados['fornecedor']) ||
             empty($dados['data_inicio']) || empty($dados['data_termino'])) {
             http_response_code(400);
-            echo json_encode(['erro' => 'Campos obrigatórios: nome, fornecedor, data_inicio, data_termino.']);
+            echo json_encode(['success' => false, 'message' => 'Campos obrigatórios: nome, fornecedor, data_inicio, data_termino.']);
             exit;
         }
 
         if (!empty($_FILES['arquivo_contrato']['name'])) {
             $resultado = uploadContrato($_FILES['arquivo_contrato']);
-            if ($resultado['sucesso']) {
-                $dados['arquivo_contrato'] = $resultado['nome_arquivo'];
-            } else {
+            if (!$resultado['sucesso']) {
                 http_response_code(400);
-                echo json_encode(['erro' => $resultado['mensagem']]);
+                echo json_encode(['success' => false, 'message' => $resultado['mensagem']]);
                 exit;
             }
+            $dados['arquivo_contrato'] = $resultado['nome_arquivo'];
         }
 
         $novoId = $model->criar($dados);
         if ($novoId) {
             http_response_code(201);
-            echo json_encode(['mensagem' => 'Serviço criado com sucesso.', 'id' => $novoId]);
+            echo json_encode(['success' => true, 'message' => 'Serviço criado com sucesso.', 'id' => $novoId]);
         } else {
             http_response_code(500);
-            echo json_encode(['erro' => 'Erro ao criar serviço.']);
+            echo json_encode(['success' => false, 'message' => 'Erro ao criar serviço.']);
         }
         break;
 
@@ -111,85 +108,88 @@ switch ($method) {
     case 'PUT':
         if (!$id) {
             http_response_code(400);
-            echo json_encode(['erro' => 'ID obrigatório para atualização.']);
+            echo json_encode(['success' => false, 'message' => 'ID obrigatório para atualização.']);
+            exit;
+        }
+
+        // Verifica existência antes de atualizar
+        $servicoAtual = $model->buscarPorId($id);
+        if (!$servicoAtual) {
+            http_response_code(404);
+            echo json_encode(['success' => false, 'message' => 'Serviço não encontrado.']);
             exit;
         }
 
         $dados = [
-            'nome'             => $_POST['nome']            ?? '',
-            'fornecedor'       => $_POST['fornecedor']      ?? '',
-            'categoria'        => $_POST['categoria']       ?? '',
-            'forma_pagamento'  => $_POST['forma_pagamento'] ?? '',
-            'descricao'        => $_POST['descricao']       ?? null,
-            'valor_total'      => $_POST['valor_total']     ?? 0,
-            'data_inicio'      => $_POST['data_inicio']     ?? '',
-            'data_termino'     => $_POST['data_termino']    ?? '',
-            'status'           => $_POST['status']          ?? 'Ativa',
-            'arquivo_contrato' => null,
+            'nome'             => trim($_POST['nome']            ?? ''),
+            'fornecedor'       => trim($_POST['fornecedor']      ?? ''),
+            'categoria'        => trim($_POST['categoria']       ?? ''),
+            'forma_pagamento'  => trim($_POST['forma_pagamento'] ?? ''),
+            'descricao'        => trim($_POST['descricao']       ?? '') ?: null,
+            'valor_total'      => $_POST['valor_total']          ?? 0,
+            'data_inicio'      => trim($_POST['data_inicio']     ?? ''),
+            'data_termino'     => trim($_POST['data_termino']    ?? ''),
+            'status'           => trim($_POST['status']          ?? 'Ativa'),
+            'arquivo_contrato' => $servicoAtual['arquivo_contrato'], // mantém atual por padrão
         ];
 
-        // Processa upload de novo contrato se enviado
         if (!empty($_FILES['arquivo_contrato']['name'])) {
-            // Remove arquivo antigo
-            $servicoAtual = $model->buscarPorId($id);
-            if ($servicoAtual && $servicoAtual['arquivo_contrato']) {
+            // Remove arquivo antigo antes de salvar o novo
+            if ($servicoAtual['arquivo_contrato']) {
                 $caminhoAntigo = __DIR__ . '/../uploads/contratos/' . $servicoAtual['arquivo_contrato'];
-                if (file_exists($caminhoAntigo)) {
-                    unlink($caminhoAntigo);
-                }
+                if (file_exists($caminhoAntigo)) unlink($caminhoAntigo);
             }
-
             $resultado = uploadContrato($_FILES['arquivo_contrato']);
-            if ($resultado['sucesso']) {
-                $dados['arquivo_contrato'] = $resultado['nome_arquivo'];
-            } else {
+            if (!$resultado['sucesso']) {
                 http_response_code(400);
-                echo json_encode(['erro' => $resultado['mensagem']]);
+                echo json_encode(['success' => false, 'message' => $resultado['mensagem']]);
                 exit;
             }
-        } else {
-            // Mantém arquivo atual
-            $servicoAtual = $model->buscarPorId($id);
-            $dados['arquivo_contrato'] = $servicoAtual['arquivo_contrato'] ?? null;
+            $dados['arquivo_contrato'] = $resultado['nome_arquivo'];
         }
 
         if ($model->atualizar($id, $dados)) {
-            echo json_encode(['mensagem' => 'Serviço atualizado com sucesso.']);
+            echo json_encode(['success' => true, 'message' => 'Serviço atualizado com sucesso.']);
         } else {
             http_response_code(500);
-            echo json_encode(['erro' => 'Erro ao atualizar serviço.']);
+            echo json_encode(['success' => false, 'message' => 'Erro ao atualizar serviço.']);
         }
         break;
 
     // -----------------------------------------------------------------------
-    // DELETE — Remove serviço e seu arquivo
+    // DELETE — Remove serviço e seu arquivo físico
     // -----------------------------------------------------------------------
     case 'DELETE':
         if (!$id) {
             http_response_code(400);
-            echo json_encode(['erro' => 'ID obrigatório para exclusão.']);
+            echo json_encode(['success' => false, 'message' => 'ID obrigatório para exclusão.']);
             exit;
         }
 
         $servico = $model->buscarPorId($id);
-        if ($servico && $servico['arquivo_contrato']) {
+        if (!$servico) {
+            http_response_code(404);
+            echo json_encode(['success' => false, 'message' => 'Serviço não encontrado.']);
+            exit;
+        }
+
+        // Remove arquivo físico se existir
+        if ($servico['arquivo_contrato']) {
             $caminho = __DIR__ . '/../uploads/contratos/' . $servico['arquivo_contrato'];
-            if (file_exists($caminho)) {
-                unlink($caminho);
-            }
+            if (file_exists($caminho)) unlink($caminho);
         }
 
         if ($model->deletar($id)) {
-            echo json_encode(['mensagem' => 'Serviço removido com sucesso.']);
+            echo json_encode(['success' => true, 'message' => 'Serviço removido com sucesso.']);
         } else {
             http_response_code(500);
-            echo json_encode(['erro' => 'Erro ao remover serviço.']);
+            echo json_encode(['success' => false, 'message' => 'Erro ao remover serviço.']);
         }
         break;
 
     default:
         http_response_code(405);
-        echo json_encode(['erro' => 'Método não permitido.']);
+        echo json_encode(['success' => false, 'message' => 'Método não permitido.']);
         break;
 }
 

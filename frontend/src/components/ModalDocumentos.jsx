@@ -2,7 +2,7 @@
 // ARQUIVO: src/components/ModalDocumentos.jsx
 // =============================================
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { FileText, Upload, Trash2, X, ExternalLink, Paperclip, Loader2 } from "lucide-react";
 import { listarDocumentos, uploadDocumento, deletarDocumento } from "../services/api";
 import {
@@ -18,20 +18,24 @@ function ModalDocumentos({ oc, onFechar, onContadorAtualizado }) {
   const [sucesso,    setSucesso]    = useState("");
   const inputRef = useRef(null);
 
-  useEffect(() => { carregarDocumentos(); }, [oc.id]);
-
-  const carregarDocumentos = async () => {
+  // useCallback evita recriação desnecessária da função a cada render
+  const carregarDocumentos = useCallback(async () => {
     try {
       setCarregando(true);
-      const dados = await listarDocumentos(oc.id);
-      setDocumentos(dados);
-      onContadorAtualizado(oc.id, dados.length);
+      const resposta = await listarDocumentos(oc.id);
+      // notafiscal.php agora retorna { success, data } — lê o array de data
+      const lista = resposta?.data ?? resposta ?? [];
+      setDocumentos(lista);
+      onContadorAtualizado(oc.id, lista.length);
     } catch {
       setErro("Erro ao carregar documentos.");
     } finally {
       setCarregando(false);
     }
-  };
+  }, [oc.id, onContadorAtualizado]);
+
+  // Dependência correta — carregarDocumentos é estável via useCallback
+  useEffect(() => { carregarDocumentos(); }, [carregarDocumentos]);
 
   const handleUpload = async (e) => {
     const arquivo = e.target.files[0];
@@ -118,7 +122,7 @@ function ModalDocumentos({ oc, onFechar, onContadorAtualizado }) {
                   <div className="flex items-center gap-3 overflow-hidden">
                     <FileText size={16} style={{ color: "#00bfff", flexShrink: 0 }} />
                     <div className="overflow-hidden">
-                      <p className="truncate text-sm text-white">{doc.nome_arquivo}</p>
+                      <p className="truncate text-sm text-white">{doc.nome_original || doc.nome_arquivo}</p>
                       <p className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
                         {formatarData(doc.criado_em)}
                       </p>

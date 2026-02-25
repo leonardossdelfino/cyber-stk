@@ -570,8 +570,11 @@ function ListagemOCs() {
   // Modal Documentos
   const abrirDocumentos   = (oc)           => setOcDocumentos(oc);
   const fecharDocumentos  = ()             => setOcDocumentos(null);
-  const atualizarContador = (oc_id, total) =>
-    setContadorDocs((prev) => ({ ...prev, [oc_id]: total }));
+  // useCallback estabiliza a referência — sem isso o ModalDocumentos
+  // entra em loop infinito pois a função é recriada a cada render
+  const atualizarContador = useCallback((oc_id, total) =>
+    setContadorDocs((prev) => ({ ...prev, [oc_id]: total }))
+  , []);
 
   // Filtragem por busca
   const ocsFiltradas = ocs.filter((oc) => {
